@@ -9,7 +9,8 @@
 //
 //*********************************************************
 
-#pragma once
+#ifndef TIMER_H_INCLUDED
+#define TIMER_H_INCLUDED
 
 // Helper class for animation and simulation timing.
 class StepTimer
@@ -181,3 +182,5 @@ private:
 	bool m_isFixedTimeStep;
 	UINT64 m_targetElapsedTicks;
 };
+
+#endif // #ifndef TIMER_H_INCLUDED

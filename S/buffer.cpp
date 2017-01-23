@@ -1,6 +1,7 @@
 #include "buffer.h"
 #include "graphics.h"
 #include "helper_functions.h"
+#include "d3dx12.h"
 
 void buffer::initialize(ID3D12Device* device, int const elements_count, UINT const element_size)
 {

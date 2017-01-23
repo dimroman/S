@@ -230,6 +230,16 @@ struct float4x4
 		float m[4][4]{ 0.f };
 	};
 
+	static inline float4x4 identity()
+	{
+		float4x4 result;
+		result._11 = 1.0f;
+		result._22 = 1.0f;
+		result._33 = 1.0f;
+		result._44 = 1.0f;
+		return result;
+	}
+
 	static inline float4x4 rotation_around_axis_x(float const radians)
 	{
 		float4x4 result;

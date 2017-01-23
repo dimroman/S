@@ -3,8 +3,8 @@
 
 struct options
 {
-	int const screen_width = 1600;
-	int const screen_height = 900;
+	int const screen_width = 1920;
+	int const screen_height = 1080;
 
 	float const field_of_view = 60.0f;
 

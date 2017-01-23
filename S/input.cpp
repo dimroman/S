@@ -1,5 +1,6 @@
 #include "input.h"
 #include <Windows.h>
+#include "application.h"
 
 enum {
 	virtual_key_left_mouse_button = 0x01,
@@ -213,7 +214,6 @@ void input::on_key_down(UINT8 const key)
 		backward_arrow_pressed = true;
 		break;
 	case virtual_key_space:
-		animate = !animate;
 		break;
 	}
 }
@@ -243,7 +243,7 @@ void input::on_key_up(UINT8 const key)
 
 void input::on_mouse_down(WPARAM const button_state, int const x, int const y)
 {
-
+	m_owner->on_mouse_down(x, y);
 }
 
 void input::on_mouse_up(WPARAM const button_state, int const x, int const y)
@@ -255,9 +255,12 @@ void input::on_mouse_move(WPARAM const button_state, int const x, int const y)
 {
 	if ((button_state & MK_LBUTTON) != 0)
 	{
-		last_dx = math::to_radians(0.25f*static_cast<float>(x - last_mouse_x));
-		last_dy = math::to_radians(0.25f*static_cast<float>(y - last_mouse_y));
+		last_dx = math::to_radians(0.01f*static_cast<float>(x - last_mouse_x));
+		last_dy = math::to_radians(0.01f*static_cast<float>(y - last_mouse_y));
 	}
+
+	if (last_mouse_x != x || last_mouse_y != y)
+		m_owner->on_mouse_move(x, y);
 
 	last_mouse_x = x;
 	last_mouse_y = y;

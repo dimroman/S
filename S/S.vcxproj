@@ -152,36 +152,66 @@
     <ClCompile Include="constant_buffer.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="graphics_initialize.cpp" />
-    <ClCompile Include="g_buffer.cpp" />
     <ClCompile Include="index_buffer.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
+    <ClCompile Include="render_object.cpp" />
     <ClCompile Include="sampler.cpp" />
-    <ClCompile Include="shadow_map.cpp" />
-    <ClCompile Include="texture2d.cpp" />
+    <ClCompile Include="rectangle.cpp" />
+    <ClCompile Include="square_grid.cpp" />
+    <ClCompile Include="texture.cpp" />
     <ClCompile Include="vertex_buffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
-    <ClInclude Include="assets.h" />
     <ClInclude Include="buffer.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="constant_buffer.h" />
     <ClInclude Include="d3dx12.h" />
-    <ClInclude Include="defines.h" />
     <ClInclude Include="graphics.h" />
-    <ClInclude Include="g_buffer.h" />
     <ClInclude Include="helper_functions.h" />
     <ClInclude Include="index_buffer.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="options.h" />
+    <ClInclude Include="render_object.h" />
     <ClInclude Include="sampler.h" />
-    <ClInclude Include="shadow_map.h" />
+    <ClInclude Include="rectangle.h" />
+    <ClInclude Include="square_grid.h" />
     <ClInclude Include="StepTimer.h" />
-    <ClInclude Include="texture2d.h" />
+    <ClInclude Include="texture.h" />
     <ClInclude Include="vertex_buffer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\square_grid_ps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Shaders\square_grid_vs.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">main</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">main</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Shaders\square_ps.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\square_vs.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

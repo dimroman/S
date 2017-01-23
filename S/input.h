@@ -4,8 +4,12 @@
 #include "math.h"
 #include <windows.h>
 
+class application;
+
 struct input
 {
+	void initialize(application* owner) { m_owner = owner; }
+
 	void on_key_down(UINT8 const key);
 	void on_key_up(UINT8 const key);
 
@@ -24,7 +28,9 @@ struct input
 	bool leftArrowPressed = false;
 	bool forward_arrow_pressed = false;
 	bool backward_arrow_pressed = false;
-	bool animate = true;
+
+private:
+	application* m_owner = nullptr;
 };
 
 #endif // #ifndef INPUT_H_INCLUDED

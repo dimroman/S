@@ -19,7 +19,7 @@ public:
 	void rotate_around_x(float const radians);
 
 private:
-	math::float3 m_position{ 0.0f, 15.0f, -30.0f };
+	math::float3 m_position{ 0.0f, 0.0f, -30.0f };
 
 	math::float3 m_axis_x{ 1.0f, 0.0f, 0.0f };
 	math::float3 m_axis_y{ 0.0f, 1.0f, 0.0f };

@@ -6,6 +6,7 @@
 #include <string>
 #include <d3dcompiler.h>
 #include <assert.h>
+#include <d3d12.h>
 
 inline void ThrowIfFailed(HRESULT hr)
 {

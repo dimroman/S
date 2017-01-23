@@ -1,13 +1,13 @@
 #include "application.h"
-#include "StepTimer.h"
 #include "camera.h"
 #include "input.h"
 #include <string>
+#include "StepTimer.h"
 
-StepTimer g_timer;
 input g_input;
 options g_options;
 world_camera g_camera;
+StepTimer g_timer;
 
 application::application(HINSTANCE handle_instance)	: 
 	m_application_instance_handle(handle_instance),
@@ -19,6 +19,16 @@ application::application(HINSTANCE handle_instance)	:
 application::~application()
 {
 
+}
+
+void application::on_mouse_down(int const x, int const y)
+{
+	m_graphics.select_object(x, y);
+}
+
+void application::on_mouse_move(int const new_x, int const new_y)
+{
+	m_graphics.highlight_object(new_x, new_y);
 }
 
 LRESULT CALLBACK
@@ -116,7 +126,8 @@ int application::run()
 	if (!m_graphics.initialize(m_main_window_handle))
 		return 0;
 
-	g_camera.set_look_position({ 0.0f, 15.0f, 0.0f });
+	g_camera.set_look_position({ 0.0f, 0.0f, 0.0f });
+	g_input.initialize(this);
 	
 	MSG msg = { 0 };
 	

@@ -2,8 +2,13 @@
 #include "helper_functions.h"
 #include "d3dx12.h"
 
-void vertex_buffer::initialize(ID3D12Device* device, ID3D12GraphicsCommandList* command_list, void* const buffer, UINT const buffer_size, UINT const stride_in_bytes)
+void vertex_buffer::initialize(ID3D12Device* device, ID3D12GraphicsCommandList* command_list, void* const buffer, UINT const vertex_size, UINT const vertices_count)
 {	
+	m_vertex_size = vertex_size;
+	m_vertices_count = vertices_count;
+
+	auto const buffer_size = vertex_size*vertices_count;
+
 	ThrowIfFailed(device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
@@ -30,5 +35,5 @@ void vertex_buffer::initialize(ID3D12Device* device, ID3D12GraphicsCommandList* 
 
 	m_view.BufferLocation = m_resource->GetGPUVirtualAddress();
 	m_view.SizeInBytes = buffer_size;
-	m_view.StrideInBytes = stride_in_bytes;
+	m_view.StrideInBytes = vertex_size;
 }

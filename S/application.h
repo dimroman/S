@@ -19,6 +19,9 @@ public:
 
 	int run();
 
+	void on_mouse_down(int const x, int const y);
+	void on_mouse_move(int const new_x, int const new_y);
+
 private:
 	HINSTANCE m_application_instance_handle = nullptr;
 	HWND      m_main_window_handle = nullptr;

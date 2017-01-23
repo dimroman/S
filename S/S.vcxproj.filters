@@ -1,41 +1,121 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="application.cpp" />
     <ClCompile Include="buffer.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="constant_buffer.cpp" />
-    <ClCompile Include="g_buffer.cpp" />
-    <ClCompile Include="graphics.cpp" />
-    <ClCompile Include="graphics_initialize.cpp" />
     <ClCompile Include="index_buffer.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="sampler.cpp" />
-    <ClCompile Include="shadow_map.cpp" />
-    <ClCompile Include="texture2d.cpp" />
     <ClCompile Include="vertex_buffer.cpp" />
+    <ClCompile Include="square_grid.cpp">
+      <Filter>render_objects\grid\square_grid</Filter>
+    </ClCompile>
+    <ClCompile Include="application.cpp">
+      <Filter>application</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics_initialize.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="texture.cpp" />
+    <ClCompile Include="render_object.cpp">
+      <Filter>render_objects\render_object</Filter>
+    </ClCompile>
+    <ClCompile Include="rectangle.cpp">
+      <Filter>render_objects\shapes\rectangle</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="application.h" />
-    <ClInclude Include="assets.h" />
     <ClInclude Include="buffer.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="constant_buffer.h" />
     <ClInclude Include="d3dx12.h" />
-    <ClInclude Include="defines.h" />
-    <ClInclude Include="g_buffer.h" />
-    <ClInclude Include="graphics.h" />
     <ClInclude Include="helper_functions.h" />
     <ClInclude Include="index_buffer.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="sampler.h" />
-    <ClInclude Include="shadow_map.h" />
     <ClInclude Include="StepTimer.h" />
-    <ClInclude Include="texture2d.h" />
     <ClInclude Include="vertex_buffer.h" />
+    <ClInclude Include="square_grid.h">
+      <Filter>render_objects\grid\square_grid</Filter>
+    </ClInclude>
+    <ClInclude Include="application.h">
+      <Filter>application</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.h" />
+    <ClInclude Include="render_object.h">
+      <Filter>render_objects\render_object</Filter>
+    </ClInclude>
+    <ClInclude Include="rectangle.h">
+      <Filter>render_objects\shapes\rectangle</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{db6180b4-a29f-4470-920b-e74a7dab092e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\grid">
+      <UniqueIdentifier>{b42391bd-b808-4312-bc40-a71693eb825d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\grid\square_grid">
+      <UniqueIdentifier>{bd203b0c-6622-4832-b8a0-298a88908536}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="application">
+      <UniqueIdentifier>{0f507002-5040-4ad7-adec-9bc170b8710a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="graphics">
+      <UniqueIdentifier>{37561134-0615-4c4c-b687-d069a0492480}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\shapes">
+      <UniqueIdentifier>{04008b21-3e45-45e4-8a94-1834d533ec64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render_objects">
+      <UniqueIdentifier>{22b29dbd-f569-4650-a2be-185fe4581b70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render_objects\render_object">
+      <UniqueIdentifier>{d79f716c-1dd0-4f4b-af05-ce37aad40702}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render_objects\grid">
+      <UniqueIdentifier>{a5d6b202-4f76-4b60-9189-b82db3482f49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render_objects\grid\square_grid">
+      <UniqueIdentifier>{4c3a8679-24e6-4849-b259-ad972b3e8f67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render_objects\grid\hexagonal_grid">
+      <UniqueIdentifier>{0f048603-6ff8-44f5-837f-a83aa6588f47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render_objects\shapes">
+      <UniqueIdentifier>{259c529b-f7e5-47bb-b5e5-24c7b7e18f1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\shapes\rectangle">
+      <UniqueIdentifier>{4a4f11d1-cd54-4067-9077-83225e750876}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render_objects\shapes\rectangle">
+      <UniqueIdentifier>{cd0171c6-c0b7-4895-b8a2-a6e688e4e52a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\square_grid_vs.hlsl">
+      <Filter>shaders\grid\square_grid</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\square_grid_ps.hlsl">
+      <Filter>shaders\grid\square_grid</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\square_ps.hlsl">
+      <Filter>shaders\shapes\rectangle</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\square_vs.hlsl">
+      <Filter>shaders\shapes\rectangle</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
