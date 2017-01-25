@@ -106,6 +106,24 @@ struct float4
 	};
 };
 
+inline float4 operator+=(float4& left, float4 const right)
+{
+	left.x += right.x;
+	left.y += right.y;
+	left.z += right.z;
+	left.w += right.w;
+	return left;
+}
+
+inline float4 operator-=(float4& left, float4 const right)
+{
+	left.x -= right.x;
+	left.y -= right.y;
+	left.z -= right.z;
+	left.w -= right.w;
+	return left;
+}
+
 struct float3x3
 {
 	float3x3() = default;

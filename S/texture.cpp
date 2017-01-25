@@ -3,15 +3,10 @@
 #include "d3dx12.h"
 #include "graphics.h"
 
-texture::texture() :
-	m_owner(nullptr)
+void texture::preinitialize(graphics* const owner, bool const use_as_cbv_srv_uav, bool const use_as_dsv, bool const use_as_rtv)
 {
+	m_owner = owner;
 
-}
-
-texture::texture(graphics* const owner, bool const use_as_cbv_srv_uav, bool const use_as_dsv, bool const use_as_rtv) :
-	m_owner(owner)
-{
 	if ( use_as_cbv_srv_uav )
 		m_owner->increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1);
 
@@ -114,13 +109,13 @@ void texture::update_readback_resource(ID3D12GraphicsCommandList* command_list)
 	destination.PlacedFootprint.Footprint.Format = m_description.Format;
 	destination.PlacedFootprint.Footprint.RowPitch = static_cast<UINT>(m_description.Width) * sizeof(UINT);
 
-	D3D12_TEXTURE_COPY_LOCATION resource;
-	resource.pResource = m_resource.Get();
-	resource.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-	resource.SubresourceIndex = 0;
+	D3D12_TEXTURE_COPY_LOCATION source;
+	source.pResource = m_resource.Get();
+	source.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	source.SubresourceIndex = 0;
 
 	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE));
-	command_list->CopyTextureRegion(&destination, 0, 0, 0, &resource, nullptr );
+	command_list->CopyTextureRegion(&destination, 0, 0, 0, &source, nullptr );
 	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
 }
 
@@ -129,7 +124,7 @@ unsigned texture::readback_value(int const offset) const
 	UINT64 const buffer_size = GetRequiredIntermediateSize(m_resource.Get(), 0, m_description.MipLevels);
 	
 	void* data = nullptr;
-	D3D12_RANGE read_range{ 0,buffer_size };
+	D3D12_RANGE read_range{ offset*sizeof(unsigned),(offset+1)*sizeof(unsigned) };
 	ThrowIfFailed(m_texture_readback_heap->Map(0, &read_range, &data));
 	auto result = *(static_cast<unsigned*>(data) + offset);
 	m_texture_readback_heap->Unmap(0, nullptr);

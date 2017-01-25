@@ -3,39 +3,33 @@
 
 #include <d3d12.h>
 #include "math.h"
-#include "vertex_buffer.h"
 #include "constant_buffer.h"
 #include "render_object.h"
 
 class graphics;
+class vertex_buffer;
 
 class rectangle : public render_object
 {
 public:
 	void preinitialize(graphics* const owner);
-	void initialize(graphics* const owner, ID3D12Device* device, ID3D12GraphicsCommandList* command_list, math::float2 const position, float const width, float const height);
-	void update(int const current_frame_index);
-	void draw(ID3D12GraphicsCommandList* const command_list, int const current_frame_index);
+	void initialize(graphics* const owner, ID3D12Device* const device, ID3D12GraphicsCommandList* const command_list, ID3D12RootSignature* const root_signature, ID3D12PipelineState* pipeline_state, vertex_buffer* const vertex_buffer, math::float2 const position, float const width, float const height);
+	void update(int const current_frame_index, D3D12_GPU_DESCRIPTOR_HANDLE const& per_frame_constants_handle);
 private:
-	enum { vertices_count = 6, };
-
-	math::float2	m_vertices[vertices_count];
-
-	vertex_buffer	m_vertex_buffer;
-
-	struct transform_constants
+	struct static_constants
 	{
-		math::float4x4 model_view_projection;
+		math::float2 position;
+		float object_width;
+		float object_height;
 		unsigned int id;
-		unsigned int is_highlighted;
-		unsigned int is_selected;
-		float float_padding[45];
 	};
+	constant_buffer m_static_constants_buffer;
 
-	constant_buffer m_transform_constants_buffer[frames_count];
-
-	ComPtr<ID3D12RootSignature>			m_root_signature;
-	ComPtr<ID3D12PipelineState>			m_pipeline_state;
+	struct per_frame_constants
+	{
+		math::float4 color;
+	};
+	constant_buffer m_per_frame_constants[frames_count];
 };
 
 #endif // #ifndef RECTANGLE_H_INCLUDED

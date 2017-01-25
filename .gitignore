@@ -57,3 +57,6 @@ S/x64/Debug/vc140.idb
 *.pdb
 S/x64/Release/S.iobj
 *.ipdb
+*.suo
+*.opendb
+S/.vs/S/v14/.suo

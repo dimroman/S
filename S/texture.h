@@ -12,8 +12,7 @@ class graphics;
 class texture
 {
 public:
-	texture();
-	texture(graphics* const owner, bool const use_as_cbv_srv_uav, bool const use_as_dsv, bool const use_as_rtv );
+	void preinitialize(graphics* const owner, bool const use_as_cbv_srv_uav, bool const use_as_dsv, bool const use_as_rtv );
 	void initialize( ID3D12Device* device, UINT64 const alignment, UINT64 const width, UINT const height, UINT16 const mip_levels, DXGI_FORMAT const format, DXGI_SAMPLE_DESC const sample_desc, D3D12_TEXTURE_LAYOUT const layout,
 		D3D12_CLEAR_VALUE const* const clear_value, D3D12_RESOURCE_STATES const state, D3D12_RESOURCE_FLAGS const flags, LPCWSTR name, UINT const index);
 	void initialize_with_data( ID3D12Device* device, ID3D12GraphicsCommandList* command_list, int const row_pitch, int const slice_pitch, void* data);
@@ -39,7 +38,7 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE m_gpu_handles[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 	D3D12_CPU_DESCRIPTOR_HANDLE m_cpu_handles[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 
-	graphics* const				m_owner;
+	graphics*					m_owner;
 };
 
 #endif // #ifndef TEXTURE2D_H_INCLUDED

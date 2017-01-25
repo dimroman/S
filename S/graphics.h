@@ -43,6 +43,9 @@ protected:
 			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
 private:
 			void						update					(float const last_frame_time);
+			void						initialize_root_signatures();
+			void						initialize_pipeline_states();
+			void						initialize_vertex_buffers(ID3D12GraphicsCommandList* const command_list);
 			
 private:
 
@@ -62,15 +65,13 @@ private:
 	ComPtr<ID3D12CommandQueue>			m_command_queue;
 	ComPtr<ID3D12CommandAllocator>		m_direct_command_list_allocators[frames_count];
 	ComPtr<ID3D12GraphicsCommandList>	m_command_lists[frames_count];
-
-	render_object						m_empty_render_object;
-	
-	enum { render_objects_count = 1024, };
+		
+	enum { render_objects_count = 2*1024, };
 	render_object*						m_render_objects[render_objects_count];
 	unsigned int						m_render_objects_count = 0;
 
-	render_object*						m_selected_render_object = &m_empty_render_object;
-	render_object*						m_highlighted_render_object = &m_empty_render_object;
+	render_object*						m_selected_render_object = nullptr;
+	render_object*						m_highlighted_render_object = nullptr;
 		
 	D3D12_VIEWPORT	m_screen_viewport;
 	D3D12_RECT		m_scissor_rectangle;
@@ -82,14 +83,40 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE m_current_gpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 	
 	UINT m_descriptor_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
+
+	enum {
+		root_signature_one,
+		root_signatures_count,
+	};
+	ComPtr<ID3D12RootSignature> m_root_signatures[root_signatures_count];
+
+	enum {
+		pipeline_state_triangle_one,
+		pipeline_state_line_one,
+		pipeline_states_count,
+	};
+	ComPtr<ID3D12PipelineState> m_pipeline_states[pipeline_states_count];
+
+	enum {
+		rectangle_vertex_buffer,
+		square_grid_vertex_buffer,
+		vertex_buffers_count,
+	};
+	vertex_buffer m_vertex_buffers[vertex_buffers_count];
 	
 private:
 	static inline float cell_side_length() { return 1.0f; }
 
 private:
+	struct per_frame_constants
+	{
+		math::float4x4 model_view_projection;
+	};
+	constant_buffer m_per_frame_constants_buffer[frames_count];
+
 	enum {
-		field_width = 8,
-		field_height = 8,
+		field_width = 32,
+		field_height = 32,
 	};
 	rectangle							m_grid_cells[field_width*field_height];
 	square_grid							m_square_grid;

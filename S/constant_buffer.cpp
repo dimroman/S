@@ -11,17 +11,17 @@ void constant_buffer::preinitialize(graphics* const owner)
 
 void constant_buffer::initialize(ID3D12Device* device, unsigned const buffer_size)
 {
-	assert(buffer_size % 256 == 0);
+	auto const aligned_buffer_size = ((buffer_size>>8) + 1)<<8;
 
 	ThrowIfFailed(device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(buffer_size),
+		&CD3DX12_RESOURCE_DESC::Buffer(aligned_buffer_size),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&m_resource)));
 
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc{ m_resource->GetGPUVirtualAddress(), buffer_size };
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc{ m_resource->GetGPUVirtualAddress(), aligned_buffer_size };
 	device->CreateConstantBufferView(&cbv_desc, m_owner->current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
 	m_gpu_handle = m_owner->current_gpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -32,7 +32,7 @@ void constant_buffer::initialize(ID3D12Device* device, unsigned const buffer_siz
 
 void constant_buffer::update(void* data, unsigned const data_size)
 {
-	D3D12_RANGE read_range{ 0,0 };
+	D3D12_RANGE read_range{ 0,data_size };
 	void* buffer_data = alloca(data_size);
 	ThrowIfFailed(m_resource->Map(0, &read_range, &buffer_data));
 	memcpy(buffer_data, data, data_size);
