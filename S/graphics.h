@@ -5,8 +5,6 @@
 #include <wrl.h>
 #include <dxgi1_4.h>
 #include <vector>
-#include "vertex_buffer.h"
-#include "index_buffer.h"
 #include "texture.h"
 #include "sampler.h"
 #include "math.h"
@@ -38,6 +36,7 @@ public:
 			void						select_object			(int const x, int const y);
 			void						highlight_object		(int const x, int const y);
 			void						add_render_object		(render_object* const object);
+			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
 			
 protected:
 			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
@@ -45,7 +44,11 @@ private:
 			void						update					(float const last_frame_time);
 			void						initialize_root_signatures();
 			void						initialize_pipeline_states();
-			void						initialize_vertex_buffers(ID3D12GraphicsCommandList* const command_list);
+			void						initialize_constant_buffers();
+			void						initialize_index_and_vertex_buffers();
+
+			D3D12_VERTEX_BUFFER_VIEW	create_vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
+			D3D12_INDEX_BUFFER_VIEW		create_index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
 			
 private:
 
@@ -102,7 +105,21 @@ private:
 		square_grid_vertex_buffer,
 		vertex_buffers_count,
 	};
-	vertex_buffer m_vertex_buffers[vertex_buffers_count];
+	D3D12_VERTEX_BUFFER_VIEW m_vertex_buffer_views[vertex_buffers_count];
+
+	enum {
+		rectangle_index_buffer,
+		index_buffers_count,
+	};
+	D3D12_INDEX_BUFFER_VIEW m_index_buffer_views[index_buffers_count];
+
+	enum {
+		upload_buffer_size = 1024*1024,
+	};
+	ComPtr<ID3D12Resource> m_upload_buffer_resource;
+	char* m_upload_buffer_data_begin = nullptr;
+	char* m_upload_buffer_data_current = nullptr;
+	char* m_upload_buffer_data_end = nullptr;
 	
 private:
 	static inline float cell_side_length() { return 1.0f; }
@@ -112,7 +129,7 @@ private:
 	{
 		math::float4x4 model_view_projection;
 	};
-	constant_buffer m_per_frame_constants_buffer[frames_count];
+	constant_buffer_data m_per_frame_constants[frames_count];
 
 	enum {
 		field_width = 32,

@@ -10,6 +10,11 @@ extern world_camera g_camera;
 extern options g_options;
 extern input g_input;
 
+bool operator!=(D3D12_VERTEX_BUFFER_VIEW const left, D3D12_VERTEX_BUFFER_VIEW const right)
+{
+	return left.BufferLocation != right.BufferLocation || left.SizeInBytes != right.SizeInBytes || left.StrideInBytes != right.StrideInBytes;
+}
+
 graphics* g_graphics = nullptr;
 
 graphics::graphics()
@@ -36,11 +41,11 @@ void graphics::update(float const last_frame_time)
 	auto const view = g_camera.look_at_right_handed();
 	auto const projection = g_camera.perspective_projection_right_handed();
 	constants.model_view_projection = math::transpose(model*(view*projection));
-	m_per_frame_constants_buffer[m_current_frame_index].update(&constants, sizeof(per_frame_constants));
+	memcpy(m_per_frame_constants[m_current_frame_index].mapped_data, &constants, sizeof(per_frame_constants));
 
 	for (auto& cell : m_grid_cells)
-		cell.update(m_current_frame_index, m_per_frame_constants_buffer[m_current_frame_index].gpu_handle());
-	m_square_grid.update(m_current_frame_index, m_per_frame_constants_buffer[m_current_frame_index].gpu_handle());
+		cell.update(m_current_frame_index);
+	m_square_grid.update(m_current_frame_index);
 }
 
 void graphics::run(float const last_frame_time)
@@ -78,7 +83,12 @@ void graphics::run(float const last_frame_time)
 	ID3D12RootSignature* root_signature = nullptr;
 	D3D12_GPU_DESCRIPTOR_HANDLE descriptor_tables[descriptor_tables_count]{ 0 };
 	D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
-	vertex_buffer* vertex_buffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view = nullptr;
+	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view = nullptr;
+
+	command_list->SetPipelineState(m_render_objects[0]->pipeline_state());
+	command_list->SetGraphicsRootSignature(m_render_objects[0]->root_signature());
+	command_list->SetGraphicsRootDescriptorTable(0, m_per_frame_constants[m_current_frame_index].gpu_handle);
 	
 	for (unsigned i = 0; i < m_render_objects_count; ++i )
 	{
@@ -94,12 +104,12 @@ void graphics::run(float const last_frame_time)
 			root_signature = object->root_signature();
 			command_list->SetGraphicsRootSignature(root_signature);
 		}
-		for (int i = 0; i < descriptor_tables_count; ++i)
+		for (int i = 1; i < descriptor_tables_count; ++i)
 		{
 			if (object->descriptor_tables()[i].ptr != descriptor_tables[i].ptr)
 			{
 				descriptor_tables[i] = object->descriptor_tables()[i];
-				command_list->SetGraphicsRootDescriptorTable(i, descriptor_tables[i]);
+				command_list->SetGraphicsRootDescriptorTable(i, object->descriptor_tables()[i]);
 			}
 		}
 		if (object->primitive_topology() != primitive_topology)
@@ -107,12 +117,23 @@ void graphics::run(float const last_frame_time)
 			primitive_topology = object->primitive_topology();
 			command_list->IASetPrimitiveTopology(primitive_topology);
 		}
-		if (object->get_vertex_buffer() != vertex_buffer)
+		if (object->vertex_buffer_view() != vertex_buffer_view)
 		{
-			vertex_buffer = object->get_vertex_buffer();
-			command_list->IASetVertexBuffers(0, 1, &vertex_buffer->view());
+			vertex_buffer_view = object->vertex_buffer_view();
+			command_list->IASetVertexBuffers(0, 1, vertex_buffer_view);
 		}
-		command_list->DrawInstanced(vertex_buffer->vertices_count(), 1, 0, 0);
+		if (object->index_buffer_view() != index_buffer_view)
+		{
+			index_buffer_view = object->index_buffer_view();
+			if (index_buffer_view)
+				command_list->IASetIndexBuffer(index_buffer_view);
+		}
+		command_list->SetGraphicsRoot32BitConstant(3, i, 0);
+
+		if ( index_buffer_view )
+			command_list->DrawIndexedInstanced(index_buffer_view->SizeInBytes/4, 1, 0, 0, 0);
+		else
+			command_list->DrawInstanced(vertex_buffer_view->SizeInBytes/vertex_buffer_view->StrideInBytes, 1, 0, 0);
 	}
 
 	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_swap_chain_buffers[m_current_frame_index].resource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));

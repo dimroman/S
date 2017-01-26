@@ -1,15 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="buffer.cpp" />
     <ClCompile Include="camera.cpp" />
-    <ClCompile Include="constant_buffer.cpp" />
-    <ClCompile Include="index_buffer.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="math.cpp" />
     <ClCompile Include="sampler.cpp" />
-    <ClCompile Include="vertex_buffer.cpp" />
     <ClCompile Include="square_grid.cpp">
       <Filter>render_objects\grid\square_grid</Filter>
     </ClCompile>
@@ -29,23 +24,18 @@
     <ClCompile Include="rectangle.cpp">
       <Filter>render_objects\shapes\rectangle</Filter>
     </ClCompile>
-    <ClCompile Include="pipeline_state.cpp">
-      <Filter>graphics\pipeline_state</Filter>
+    <ClCompile Include="math.cpp">
+      <Filter>math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="buffer.h" />
     <ClInclude Include="camera.h" />
-    <ClInclude Include="constant_buffer.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="helper_functions.h" />
-    <ClInclude Include="index_buffer.h" />
     <ClInclude Include="input.h" />
-    <ClInclude Include="math.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="sampler.h" />
     <ClInclude Include="StepTimer.h" />
-    <ClInclude Include="vertex_buffer.h" />
     <ClInclude Include="square_grid.h">
       <Filter>render_objects\grid\square_grid</Filter>
     </ClInclude>
@@ -62,8 +52,8 @@
     <ClInclude Include="rectangle.h">
       <Filter>render_objects\shapes\rectangle</Filter>
     </ClInclude>
-    <ClInclude Include="pipeline_state.h">
-      <Filter>graphics\pipeline_state</Filter>
+    <ClInclude Include="math.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -103,8 +93,11 @@
     <Filter Include="shaders\vertex">
       <UniqueIdentifier>{ea219afe-b177-4c44-a8d4-34f70bf34073}</UniqueIdentifier>
     </Filter>
-    <Filter Include="graphics\pipeline_state">
-      <UniqueIdentifier>{e55d630e-0065-4d9e-b608-fd8a28183228}</UniqueIdentifier>
+    <Filter Include="math">
+      <UniqueIdentifier>{7e623c38-4456-4801-a2c1-f2ca17948dbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\common">
+      <UniqueIdentifier>{9be39e2b-5c59-464e-b357-be4cc51fccd2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +106,9 @@
     </FxCompile>
     <FxCompile Include="Shaders\xy_position_x_model_view_projection.hlsl">
       <Filter>shaders\vertex</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\common.hlsl">
+      <Filter>shaders\common</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

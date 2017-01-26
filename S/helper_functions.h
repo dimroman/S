@@ -14,6 +14,15 @@ inline void ThrowIfFailed(HRESULT hr)
 		throw std::exception();
 }
 
+inline void ThrowIfFailed(HRESULT hr, ComPtr<ID3DBlob> const& errors)
+{
+	if (errors != nullptr) 
+		OutputDebugStringA((char*)errors->GetBufferPointer());
+
+	if (FAILED(hr))
+		throw std::exception();
+}
+
 inline HRESULT ReadDataFromFile(LPCWSTR filename, byte** data, UINT* size)
 {
 	using namespace Microsoft::WRL;
@@ -112,6 +121,11 @@ static inline D3D12_CLEAR_VALUE clear_value(DXGI_FORMAT format, std::initializer
 	for (auto const& c : color)
 		result.Color[i++] = c;
 	return result;
+}
+
+static inline unsigned aligned(unsigned const value, unsigned const align)
+{
+	return (value + align - 1) & ~(align - 1);
 }
 
 #endif // #ifndef HELPER_FUNCIONS_H_INCLUDED

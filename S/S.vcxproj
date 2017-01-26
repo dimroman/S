@@ -147,43 +147,33 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="application.cpp" />
-    <ClCompile Include="buffer.cpp" />
     <ClCompile Include="camera.cpp" />
-    <ClCompile Include="constant_buffer.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="graphics_initialize.cpp" />
-    <ClCompile Include="index_buffer.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
-    <ClCompile Include="pipeline_state.cpp" />
     <ClCompile Include="render_object.cpp" />
     <ClCompile Include="sampler.cpp" />
     <ClCompile Include="rectangle.cpp" />
     <ClCompile Include="square_grid.cpp" />
     <ClCompile Include="texture.cpp" />
-    <ClCompile Include="vertex_buffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
-    <ClInclude Include="buffer.h" />
     <ClInclude Include="camera.h" />
-    <ClInclude Include="constant_buffer.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="helper_functions.h" />
-    <ClInclude Include="index_buffer.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="options.h" />
-    <ClInclude Include="pipeline_state.h" />
     <ClInclude Include="render_object.h" />
     <ClInclude Include="sampler.h" />
     <ClInclude Include="rectangle.h" />
     <ClInclude Include="square_grid.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="texture.h" />
-    <ClInclude Include="vertex_buffer.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color_id.hlsl">
@@ -195,12 +185,22 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\common.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\xy_position_x_model_view_projection.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

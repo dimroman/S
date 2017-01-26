@@ -1,15 +1,4 @@
-cbuffer per_frame_constants : register(b0)
-{
-	float4x4 model_view_projection;
-};
-
-cbuffer static_constants : register(b2)
-{
-	float2 object_position;
-	float object_width;
-	float object_height;
-	uint id;
-}
+#include "common.hlsl"
 
 float4 main(float2 position : POSITION) : SV_POSITION
 {

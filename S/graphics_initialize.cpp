@@ -38,10 +38,11 @@ void graphics::initialize_root_signatures()
 		{ D3D12_DESCRIPTOR_RANGE_TYPE_CBV,		1, 2, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC,						D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
 	};
 
-	CD3DX12_ROOT_PARAMETER1 root_parameters[descriptor_tables_count];
+	CD3DX12_ROOT_PARAMETER1 root_parameters[descriptor_tables_count+1];
 	root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 	root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
 	root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+	root_parameters[3].InitAsConstants(1, 3, 0, D3D12_SHADER_VISIBILITY_ALL);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
 	root_signature_desc.Init_1_1(_countof(root_parameters), root_parameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
@@ -56,10 +57,18 @@ void graphics::initialize_pipeline_states()
 {
 	ComPtr<ID3DBlob> vertex_shader;
 	ComPtr<ID3DBlob> pixel_shader;
+	ComPtr<ID3DBlob> errors;
+
+	auto const render_objects_count_string = std::to_string(1);
+
+	D3D_SHADER_MACRO const shader_macros[] = { 
+		{ "RENDER_OBJECTS_COUNT", render_objects_count_string.c_str() },
+		{ nullptr, nullptr } 
+	};
 
 	UINT const compile_flags = default_compile_flags();
-	ThrowIfFailed(D3DCompileFromFile(L"Shaders//xy_position_x_model_view_projection.hlsl", nullptr, nullptr, "main", "vs_5_1", compile_flags, 0, &vertex_shader, nullptr));
-	ThrowIfFailed(D3DCompileFromFile(L"Shaders//color_id.hlsl", nullptr, nullptr, "main", "ps_5_1", compile_flags, 0, &pixel_shader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(L"Shaders//xy_position_x_model_view_projection.hlsl", shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compile_flags, 0, &vertex_shader, &errors), errors);	
+	ThrowIfFailed(D3DCompileFromFile(L"Shaders//color_id.hlsl", shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compile_flags, 0, &pixel_shader, &errors), errors);
 
 	D3D12_INPUT_ELEMENT_DESC input_element_description[] =
 	{
@@ -89,21 +98,92 @@ void graphics::initialize_pipeline_states()
 	ThrowIfFailed(m_d3d_device->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&m_pipeline_states[pipeline_state_line_one])));
 }
 
-void graphics::initialize_vertex_buffers(ID3D12GraphicsCommandList* const command_list)
+D3D12_VERTEX_BUFFER_VIEW graphics::create_vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size)
 {
-	math::float2 rectangle_vertices[]{
+	memcpy(m_upload_buffer_data_current, vertices, vertices_size);
+	D3D12_VERTEX_BUFFER_VIEW const result = {
+		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),
+		vertices_size,
+		vertex_size
+	};
+	m_upload_buffer_data_current += aligned(vertices_size, 4);
+	assert(m_upload_buffer_data_current < m_upload_buffer_data_end);
+	return result;
+}
+
+D3D12_INDEX_BUFFER_VIEW graphics::create_index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format)
+{
+	memcpy(m_upload_buffer_data_current, indices, indices_size);
+	D3D12_INDEX_BUFFER_VIEW const result {
+		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),
+		indices_size,
+		format
+	};
+	m_upload_buffer_data_current += aligned(indices_size, 4);
+	assert(m_upload_buffer_data_current < m_upload_buffer_data_end);
+	return result;
+}
+
+constant_buffer_data graphics::create_constant_buffer_view(unsigned const buffer_size)
+{
+	auto const aligned_size = aligned(buffer_size, 256);
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc{
+		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),
+		aligned_size
+	};
+	m_d3d_device->CreateConstantBufferView(&cbv_desc, current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
+	auto const gpu_handle = current_gpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	constant_buffer_data result(static_cast<void*>(m_upload_buffer_data_current), gpu_handle);
+
+	m_upload_buffer_data_current += aligned_size;
+	assert(m_upload_buffer_data_current < m_upload_buffer_data_end);
+	increment_handles(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	return result;
+}
+
+void graphics::initialize_constant_buffers()
+{
+	m_d3d_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(upload_buffer_size),
+		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+		IID_PPV_ARGS(m_upload_buffer_resource.GetAddressOf())
+	);
+
+	void* data;
+	D3D12_RANGE read_range{ 0, upload_buffer_size };
+	m_upload_buffer_resource->Map(0, &read_range, &data);
+	m_upload_buffer_data_current = m_upload_buffer_data_begin = static_cast<char*>(data);
+	m_upload_buffer_data_end = m_upload_buffer_data_begin + upload_buffer_size;
+
+
+
+	for (auto& data : m_per_frame_constants)
+		data = create_constant_buffer_view(sizeof(per_frame_constants));
+
+}
+
+void graphics::initialize_index_and_vertex_buffers()
+{
+	math::float2 const rectangle_vertices[]{
 		{ 0.5f, 0.5f },
 		{ -0.5f, 0.5f },
 		{ 0.5f, -0.5f },
-		{ 0.5f, -0.5f },
-		{ -0.5f, 0.5f },
 		{ -0.5f, -0.5f }
 	};
+	m_vertex_buffer_views[rectangle_vertex_buffer] = create_vertex_buffer_view(rectangle_vertices, sizeof(rectangle_vertices), sizeof(math::float2));
+	
+	unsigned const rectangle_indices[]{
+		0, 1, 2, 2, 1, 3
+	};
+	m_index_buffer_views[rectangle_index_buffer] = create_index_buffer_view(rectangle_indices, sizeof(rectangle_indices), DXGI_FORMAT_R32_UINT);	
 
-	m_vertex_buffers[rectangle_vertex_buffer].initialize(m_d3d_device.Get(), command_list, (void*)&rectangle_vertices[0], sizeof(math::float2), _countof(rectangle_vertices));
 
-
-	unsigned const grid_vertices_count = 2*(field_width + 1 + field_height + 1);
+	unsigned const grid_vertices_count = 2 * (field_width + 1 + field_height + 1);
 	math::float2	grid_vertices[grid_vertices_count];
 	unsigned		index{ 0 };
 
@@ -112,21 +192,18 @@ void graphics::initialize_vertex_buffers(ID3D12GraphicsCommandList* const comman
 		grid_vertices[index++] = { (float)i - field_width / 2.f, -(field_height / 2.f) };
 		grid_vertices[index++] = { (float)i - field_width / 2.f, field_height / 2.f };
 	}
-
 	for (unsigned i = 0; i <= field_height; ++i)
 	{
 		grid_vertices[index++] = { -(field_width / 2.f), (float)i - field_height / 2.f };
 		grid_vertices[index++] = { field_width / 2.f, (float)i - field_height / 2.f };
 	}
 	assert(index == grid_vertices_count);
-
-	m_vertex_buffers[square_grid_vertex_buffer].initialize(m_d3d_device.Get(), command_list, (void*)&grid_vertices[0], sizeof(math::float2), grid_vertices_count);
+	m_vertex_buffer_views[square_grid_vertex_buffer] = create_vertex_buffer_view(grid_vertices, sizeof(grid_vertices), sizeof(math::float2));
 }
 
 bool graphics::initialize(HWND main_window_handle)
 {
-	for (auto& buffer : m_per_frame_constants_buffer)
-		buffer.preinitialize(this);
+	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_per_frame_constants));
 
 	for (auto& cell : m_grid_cells)
 		cell.preinitialize(this);
@@ -214,16 +291,34 @@ bool graphics::initialize(HWND main_window_handle)
 	m_screen_viewport.MinDepth = 0.0f;
 	m_screen_viewport.MaxDepth = 1.0f;
 	m_scissor_rectangle = { 0, 0, g_options.screen_width, g_options.screen_height };
-	
-	for (auto& buffer : m_per_frame_constants_buffer)
-		buffer.initialize(m_d3d_device.Get(), sizeof(per_frame_constants));
 
-	initialize_vertex_buffers(initialization_command_list.Get());
+	initialize_constant_buffers();
 
 	for ( int i = 0; i < field_width; i++ )
 	for ( int j = 0; j < field_height; j++ )
-		m_grid_cells[i + j * field_width].initialize(this, m_d3d_device.Get(), initialization_command_list.Get(), m_root_signatures[root_signature_one].Get(), m_pipeline_states[pipeline_state_triangle_one].Get(), &m_vertex_buffers[rectangle_vertex_buffer], { cell_side_length()*i - cell_side_length()*(field_width-1)/2, cell_side_length()*j - cell_side_length()*(field_height-1)/2 }, cell_side_length(), cell_side_length());
-	m_square_grid.initialize(this, m_d3d_device.Get(), initialization_command_list.Get(), m_root_signatures[root_signature_one].Get(), m_pipeline_states[pipeline_state_line_one].Get(), &m_vertex_buffers[square_grid_vertex_buffer], cell_side_length());
+		m_grid_cells[i + j * field_width].initialize(
+			this, 
+			m_d3d_device.Get(), 
+			m_root_signatures[root_signature_one].Get(), 
+			m_pipeline_states[pipeline_state_triangle_one].Get(), 
+			&m_vertex_buffer_views[rectangle_vertex_buffer], 
+			&m_index_buffer_views[rectangle_index_buffer], 
+			{ cell_side_length()*i - cell_side_length()*(field_width-1)/2, cell_side_length()*j - cell_side_length()*(field_height-1)/2 }, 
+			cell_side_length(), 
+			cell_side_length()
+		);
+
+	m_square_grid.initialize(
+		this, 
+		m_d3d_device.Get(), 
+		m_root_signatures[root_signature_one].Get(), 
+		m_pipeline_states[pipeline_state_line_one].Get(), 
+		&m_vertex_buffer_views[square_grid_vertex_buffer], 
+		nullptr, 
+		cell_side_length()
+	);
+
+	initialize_index_and_vertex_buffers();
 
 	ThrowIfFailed(initialization_command_list->Close());
 

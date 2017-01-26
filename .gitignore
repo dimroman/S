@@ -60,3 +60,7 @@ S/x64/Release/S.iobj
 *.suo
 *.opendb
 S/.vs/S/v14/.suo
+*.enc
+*.suo
+S/.vs/S/v14/.suo
+*.suo
