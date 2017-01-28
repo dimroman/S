@@ -9,10 +9,34 @@ enum
 	frames_count = 2, 
 };
 
-enum 
-{ 
-	render_objects_count = 1024 + 512, 
+enum
+{
+	render_objects_count = 1024 + 512,
+	max_vertex_buffer_views_count = 4,
+	max_index_buffer_views_count = 4,
 };
+
+namespace root_signatures {
+	enum {
+		one,
+		count,
+	};
+}
+
+namespace pipeline_states {
+	enum {
+		triangle_one,
+		line_one,
+		count,
+	};
+}
+
+namespace index_buffer_views {
+	enum {
+		rectangle,
+		count,
+	};
+}
 
 struct per_object_constants
 {

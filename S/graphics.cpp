@@ -5,6 +5,7 @@
 #include <vector>
 #include <process.h>
 #include "input.h"
+#include "camera.h"
 
 extern world_camera g_camera;
 extern options g_options;

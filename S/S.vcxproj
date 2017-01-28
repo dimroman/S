@@ -109,6 +109,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -143,6 +144,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -156,6 +158,7 @@
     <ClCompile Include="render_object.cpp" />
     <ClCompile Include="sampler.cpp" />
     <ClCompile Include="rectangle.cpp" />
+    <ClCompile Include="square_field.cpp" />
     <ClCompile Include="square_grid.cpp" />
     <ClCompile Include="texture.cpp" />
   </ItemGroup>
@@ -171,6 +174,7 @@
     <ClInclude Include="render_object.h" />
     <ClInclude Include="sampler.h" />
     <ClInclude Include="rectangle.h" />
+    <ClInclude Include="square_field.h" />
     <ClInclude Include="square_grid.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="texture.h" />

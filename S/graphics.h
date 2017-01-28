@@ -4,14 +4,12 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <dxgi1_4.h>
-#include <vector>
 #include "texture.h"
 #include "sampler.h"
 #include "math.h"
-#include "camera.h"
 #include "render_object.h"
-#include "rectangle.h"
-#include "square_grid.h"
+#include "square_field.h"
+#include <utility>
 
 using Microsoft::WRL::ComPtr;
 
@@ -37,18 +35,17 @@ public:
 			void						highlight_object		(int const x, int const y);
 			void						add_render_object		(render_object* const object);
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
-			
-protected:
-			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
-private:
-			void						update					(float const last_frame_time);
-			void						initialize_root_signatures();
-			void						initialize_pipeline_states();
-			void						initialize_constant_buffers();
-			void						initialize_index_and_vertex_buffers();
 
-			D3D12_VERTEX_BUFFER_VIEW	create_vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
-			D3D12_INDEX_BUFFER_VIEW		create_index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
+			ID3D12PipelineState*		pipeline_state			(unsigned const id);
+			ID3D12RootSignature*		root_signature			(unsigned const id);
+			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view		(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size, unsigned const hash_value);
+			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view		(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format, unsigned const hash_value);
+			
+private:
+			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
+
+			void						update					(float const last_frame_time);
+			void						initialize_constant_buffers();
 			
 private:
 
@@ -86,43 +83,20 @@ private:
 	
 	UINT m_descriptor_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 
-	enum {
-		root_signature_one,
-		root_signatures_count,
-	};
-	ComPtr<ID3D12RootSignature> m_root_signatures[root_signatures_count];
+	ComPtr<ID3D12PipelineState> m_pipeline_states[pipeline_states::count];
+	ComPtr<ID3D12RootSignature> m_root_signatures[root_signatures::count];
+	std::pair<D3D12_VERTEX_BUFFER_VIEW, unsigned> m_vertex_buffer_views[max_vertex_buffer_views_count];
+	unsigned m_vertex_buffer_views_count{ 0 };
+	std::pair<D3D12_INDEX_BUFFER_VIEW, unsigned> m_index_buffer_views[max_index_buffer_views_count];
+	unsigned m_index_buffer_views_count{ 0 };	
 
-	enum {
-		pipeline_state_triangle_one,
-		pipeline_state_line_one,
-		pipeline_states_count,
-	};
-	ComPtr<ID3D12PipelineState> m_pipeline_states[pipeline_states_count];
-
-	enum {
-		rectangle_vertex_buffer,
-		square_grid_vertex_buffer,
-		vertex_buffers_count,
-	};
-	D3D12_VERTEX_BUFFER_VIEW m_vertex_buffer_views[vertex_buffers_count];
-
-	enum {
-		rectangle_index_buffer,
-		index_buffers_count,
-	};
-	D3D12_INDEX_BUFFER_VIEW m_index_buffer_views[index_buffers_count];	
+	//std::pair<ComPtr<ID3DBlob>, unsigned>
 private:
-	float m_cell_side_length = 1.0f;
 
 private:
 	constant_buffer_data m_per_frame_constants[frames_count];
 
-	enum {
-		field_width = 32,
-		field_height = 32,
-	};
-	rectangle							m_grid_cells[field_width*field_height];
-	square_grid							m_square_grid;
+	square_field m_square_field;
 }; // class graphics
 
 #endif // #ifndef GRAPHICS_H_INCLUDED

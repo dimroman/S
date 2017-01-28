@@ -6,7 +6,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="sampler.cpp" />
     <ClCompile Include="square_grid.cpp">
-      <Filter>render_objects\grid\square_grid</Filter>
+      <Filter>objects\square_grid</Filter>
     </ClCompile>
     <ClCompile Include="application.cpp">
       <Filter>application</Filter>
@@ -19,13 +19,16 @@
     </ClCompile>
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="render_object.cpp">
-      <Filter>render_objects\render_object</Filter>
+      <Filter>render_object</Filter>
     </ClCompile>
     <ClCompile Include="rectangle.cpp">
-      <Filter>render_objects\shapes\rectangle</Filter>
+      <Filter>objects\rectangle</Filter>
     </ClCompile>
     <ClCompile Include="math.cpp">
       <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="square_field.cpp">
+      <Filter>objects\square_field</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -37,7 +40,7 @@
     <ClInclude Include="sampler.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="square_grid.h">
-      <Filter>render_objects\grid\square_grid</Filter>
+      <Filter>objects\square_grid</Filter>
     </ClInclude>
     <ClInclude Include="application.h">
       <Filter>application</Filter>
@@ -47,13 +50,16 @@
     </ClInclude>
     <ClInclude Include="texture.h" />
     <ClInclude Include="render_object.h">
-      <Filter>render_objects\render_object</Filter>
+      <Filter>render_object</Filter>
     </ClInclude>
     <ClInclude Include="rectangle.h">
-      <Filter>render_objects\shapes\rectangle</Filter>
+      <Filter>objects\rectangle</Filter>
     </ClInclude>
     <ClInclude Include="math.h">
       <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="square_field.h">
+      <Filter>objects\square_field</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -66,27 +72,6 @@
     <Filter Include="graphics">
       <UniqueIdentifier>{37561134-0615-4c4c-b687-d069a0492480}</UniqueIdentifier>
     </Filter>
-    <Filter Include="render_objects">
-      <UniqueIdentifier>{22b29dbd-f569-4650-a2be-185fe4581b70}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render_objects\render_object">
-      <UniqueIdentifier>{d79f716c-1dd0-4f4b-af05-ce37aad40702}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render_objects\grid">
-      <UniqueIdentifier>{a5d6b202-4f76-4b60-9189-b82db3482f49}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render_objects\grid\square_grid">
-      <UniqueIdentifier>{4c3a8679-24e6-4849-b259-ad972b3e8f67}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render_objects\grid\hexagonal_grid">
-      <UniqueIdentifier>{0f048603-6ff8-44f5-837f-a83aa6588f47}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render_objects\shapes">
-      <UniqueIdentifier>{259c529b-f7e5-47bb-b5e5-24c7b7e18f1a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render_objects\shapes\rectangle">
-      <UniqueIdentifier>{cd0171c6-c0b7-4895-b8a2-a6e688e4e52a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders\pixel">
       <UniqueIdentifier>{bb4dd025-2d61-4c7a-9449-e5f447ac3512}</UniqueIdentifier>
     </Filter>
@@ -98,6 +83,21 @@
     </Filter>
     <Filter Include="shaders\common">
       <UniqueIdentifier>{9be39e2b-5c59-464e-b357-be4cc51fccd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render_object">
+      <UniqueIdentifier>{d79f716c-1dd0-4f4b-af05-ce37aad40702}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="objects">
+      <UniqueIdentifier>{22b29dbd-f569-4650-a2be-185fe4581b70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="objects\rectangle">
+      <UniqueIdentifier>{cd0171c6-c0b7-4895-b8a2-a6e688e4e52a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="objects\square_grid">
+      <UniqueIdentifier>{4c3a8679-24e6-4849-b259-ad972b3e8f67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="objects\square_field">
+      <UniqueIdentifier>{ef1de08a-62bc-4b90-8962-a0c6eae7b09c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
