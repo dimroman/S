@@ -10,7 +10,7 @@ struct ps_output
 ps_output main(float4 position : SV_POSITION)
 {
 	ps_output result;
-	result.color = color[0];
+	result.color = object_constants[id].color;
 	result.index = id;
 	return result;
 }

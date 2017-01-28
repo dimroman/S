@@ -36,16 +36,27 @@ void graphics::finalize()
 
 void graphics::update(float const last_frame_time)
 {
-	per_frame_constants constants;
 	auto const model = math::float4x4::identity();
 	auto const view = g_camera.look_at_right_handed();
 	auto const projection = g_camera.perspective_projection_right_handed();
-	constants.model_view_projection = math::transpose(model*(view*projection));
-	memcpy(m_per_frame_constants[m_current_frame_index].mapped_data, &constants, sizeof(per_frame_constants));
+	math::float4x4 model_view_projection = math::transpose(model*(view*projection));
 
-	for (auto& cell : m_grid_cells)
-		cell.update(m_current_frame_index);
-	m_square_grid.update(m_current_frame_index);
+	m_per_frame_constants[m_current_frame_index].update(0, &model_view_projection, sizeof(model_view_projection));
+
+	per_object_constants object_constants;
+
+	for (unsigned i = 0; i < m_render_objects_count; ++i)
+	{
+		if (!m_render_objects[i]->update(object_constants))
+			continue;
+
+		m_per_frame_constants[m_current_frame_index].update(
+			sizeof(math::float4x4) + i * sizeof(per_object_constants), 
+			&object_constants,
+			sizeof(object_constants)
+		);
+	}
+
 }
 
 void graphics::run(float const last_frame_time)
@@ -81,14 +92,13 @@ void graphics::run(float const last_frame_time)
 
 	ID3D12PipelineState* pipeline_state = nullptr;
 	ID3D12RootSignature* root_signature = nullptr;
-	D3D12_GPU_DESCRIPTOR_HANDLE descriptor_tables[descriptor_tables_count]{ 0 };
 	D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
 	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view = nullptr;
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view = nullptr;
 
 	command_list->SetPipelineState(m_render_objects[0]->pipeline_state());
 	command_list->SetGraphicsRootSignature(m_render_objects[0]->root_signature());
-	command_list->SetGraphicsRootDescriptorTable(0, m_per_frame_constants[m_current_frame_index].gpu_handle);
+	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_constants[m_current_frame_index].gpu_handle);
 	
 	for (unsigned i = 0; i < m_render_objects_count; ++i )
 	{
@@ -97,21 +107,13 @@ void graphics::run(float const last_frame_time)
 		if (object->pipeline_state() != pipeline_state)
 		{
 			pipeline_state = object->pipeline_state();
-			command_list->SetPipelineState(pipeline_state);
+			command_list->SetPipelineState(object->pipeline_state());
 		}
 		if (object->root_signature() != root_signature)
 		{
 			root_signature = object->root_signature();
 			command_list->SetGraphicsRootSignature(root_signature);
-		}
-		for (int i = 1; i < descriptor_tables_count; ++i)
-		{
-			if (object->descriptor_tables()[i].ptr != descriptor_tables[i].ptr)
-			{
-				descriptor_tables[i] = object->descriptor_tables()[i];
-				command_list->SetGraphicsRootDescriptorTable(i, object->descriptor_tables()[i]);
-			}
-		}
+		}			
 		if (object->primitive_topology() != primitive_topology)
 		{
 			primitive_topology = object->primitive_topology();
@@ -128,7 +130,7 @@ void graphics::run(float const last_frame_time)
 			if (index_buffer_view)
 				command_list->IASetIndexBuffer(index_buffer_view);
 		}
-		command_list->SetGraphicsRoot32BitConstant(3, i, 0);
+		command_list->SetGraphicsRoot32BitConstant(0, i, 0);
 
 		if ( index_buffer_view )
 			command_list->DrawIndexedInstanced(index_buffer_view->SizeInBytes/4, 1, 0, 0, 0);
@@ -164,6 +166,8 @@ void graphics::run(float const last_frame_time)
 void graphics::select_object(int const x, int const y)
 {
 	auto const selected_object_id = m_indices_render_targets[m_current_frame_index].readback_value(x + y * g_options.screen_width);
+	if (m_selected_render_object == m_render_objects[selected_object_id])
+		return;
 	
 	if ( m_selected_render_object )
 		m_selected_render_object->set_selected(false);
@@ -174,6 +178,8 @@ void graphics::select_object(int const x, int const y)
 void graphics::highlight_object(int const x, int const y)
 {
 	auto const highlighted_object_id = m_indices_render_targets[m_current_frame_index].readback_value(x + y * g_options.screen_width);
+	if (m_highlighted_render_object == m_render_objects[highlighted_object_id])
+		return;
 
 	if ( m_highlighted_render_object )
 		m_highlighted_render_object->set_highlighted(false);
@@ -185,6 +191,5 @@ void graphics::add_render_object(render_object* const object)
 { 
 	assert(m_render_objects_count < render_objects_count);
 	m_render_objects[m_render_objects_count] = object; 
-	object->set_id(m_render_objects_count);
 	m_render_objects_count++;
 }

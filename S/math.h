@@ -89,10 +89,11 @@ inline float3 cross(float3 const& left, float3 const right)
 
 struct float4
 {
-	float4() = default;
-	float4(float const default_value) { x = y = z = w = default_value; }
-	float4(float const x, float const y, float const z, float const w) : x(x), y(y), z(z), w(w) {}
-	float4(float3 const& other) : x(other.x), y(other.y), z(other.z), w(0.0f) {}
+	inline float4() = default;
+	inline float4(float const default_value) { x = y = z = w = default_value; }
+	inline float4(float const x, float const y, float const z, float const w) : x(x), y(y), z(z), w(w) {}
+	inline float4(float3 const& other) : x(other.x), y(other.y), z(other.z), w(0.0f) {}
+	
 	inline float3 xyz() const { return float3{ x,y,z }; }
 
 	union {
@@ -106,7 +107,7 @@ struct float4
 	};
 };
 
-inline float4 operator+=(float4& left, float4 const right)
+inline float4& operator+=(float4& left, float4 const& right)
 {
 	left.x += right.x;
 	left.y += right.y;
@@ -115,7 +116,7 @@ inline float4 operator+=(float4& left, float4 const right)
 	return left;
 }
 
-inline float4 operator-=(float4& left, float4 const right)
+inline float4& operator-=(float4& left, float4 const& right)
 {
 	left.x -= right.x;
 	left.y -= right.y;

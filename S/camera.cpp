@@ -15,17 +15,17 @@ math::float4x4 world_camera::look_at_right_handed()
 	}
 
 	math::float4x4 orientation{
-		{ m_axis_x.x, m_axis_y.x, m_axis_z.x, 0.0f },
-		{ m_axis_x.y, m_axis_y.y, m_axis_z.y, 0.0f },
-		{ m_axis_x.z, m_axis_y.z, m_axis_z.z, 0.0f },
-		{ 0.0f, 0.0f, 0.0f, 1.0f }
+		math::float4{ m_axis_x.x, m_axis_y.x, m_axis_z.x, 0.0f },
+		math::float4{ m_axis_x.y, m_axis_y.y, m_axis_z.y, 0.0f },
+		math::float4{ m_axis_x.z, m_axis_y.z, m_axis_z.z, 0.0f },
+		math::float4{ 0.0f, 0.0f, 0.0f, 1.0f }
 	};
 
 	math::float4x4 translation{
-		{ 1.0f, 0.0f, 0.0f, 0.0f },
-		{ 0.0f, 1.0f, 0.0f, 0.0f },
-		{ 0.0f, 0.0f, 1.0f, 0.0f },
-		{ -m_position.x, -m_position.y, -m_position.z, 1.0f }
+		math::float4{ 1.0f, 0.0f, 0.0f, 0.0f },
+		math::float4{ 0.0f, 1.0f, 0.0f, 0.0f },
+		math::float4{ 0.0f, 0.0f, 1.0f, 0.0f },
+		math::float4{ -m_position.x, -m_position.y, -m_position.z, 1.0f }
 	};
 
 	return orientation*translation;

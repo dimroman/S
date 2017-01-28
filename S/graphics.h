@@ -69,7 +69,6 @@ private:
 	ComPtr<ID3D12CommandAllocator>		m_direct_command_list_allocators[frames_count];
 	ComPtr<ID3D12GraphicsCommandList>	m_command_lists[frames_count];
 		
-	enum { render_objects_count = 2*1024, };
 	render_object*						m_render_objects[render_objects_count];
 	unsigned int						m_render_objects_count = 0;
 
@@ -111,24 +110,11 @@ private:
 		rectangle_index_buffer,
 		index_buffers_count,
 	};
-	D3D12_INDEX_BUFFER_VIEW m_index_buffer_views[index_buffers_count];
-
-	enum {
-		upload_buffer_size = 1024*1024,
-	};
-	ComPtr<ID3D12Resource> m_upload_buffer_resource;
-	char* m_upload_buffer_data_begin = nullptr;
-	char* m_upload_buffer_data_current = nullptr;
-	char* m_upload_buffer_data_end = nullptr;
-	
+	D3D12_INDEX_BUFFER_VIEW m_index_buffer_views[index_buffers_count];	
 private:
-	static inline float cell_side_length() { return 1.0f; }
+	float m_cell_side_length = 1.0f;
 
 private:
-	struct per_frame_constants
-	{
-		math::float4x4 model_view_projection;
-	};
 	constant_buffer_data m_per_frame_constants[frames_count];
 
 	enum {
