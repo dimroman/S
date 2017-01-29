@@ -178,11 +178,11 @@ ID3D12RootSignature*		graphics::root_signature(unsigned const id)
 
 	return m_root_signatures[id].Get();
 }
-D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size, unsigned const hash_value)
+D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size, unsigned const index)
 {
 	for (unsigned i = 0; i < m_vertex_buffer_views_count; ++i)
 	{
-		if (hash_value == m_vertex_buffer_views[i].second)
+		if (index == m_vertex_buffer_views[i].second)
 			return &m_vertex_buffer_views[i].first;
 	}
 
@@ -193,7 +193,7 @@ D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertice
 		vertex_size
 	};
 
-	m_vertex_buffer_views[m_vertex_buffer_views_count++] = { view, hash_value };
+	m_vertex_buffer_views[m_vertex_buffer_views_count++] = { view, index };
 	assert(m_vertex_buffer_views_count < max_vertex_buffer_views_count);
 
 	s_upload_buffer_data_current += aligned(vertices_size, 4);
@@ -202,11 +202,11 @@ D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertice
 	return &m_vertex_buffer_views[m_vertex_buffer_views_count - 1].first;
 }
 
-D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format, unsigned const hash_value)
+D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format, unsigned const index)
 {
 	for (unsigned i = 0; i < m_index_buffer_views_count; ++i)
 	{
-		if (hash_value == m_index_buffer_views[i].second)
+		if (index == m_index_buffer_views[i].second)
 			return &m_index_buffer_views[i].first;
 	}
 
@@ -217,7 +217,7 @@ D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, 
 		format
 	};
 
-	m_index_buffer_views[m_index_buffer_views_count++] = { view, hash_value };
+	m_index_buffer_views[m_index_buffer_views_count++] = { view, index };
 	assert(m_index_buffer_views_count < max_index_buffer_views_count);
 
 	s_upload_buffer_data_current += aligned(indices_size, 4);

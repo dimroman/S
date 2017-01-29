@@ -1,17 +1,40 @@
 #include "square_grid.h"
+#include "graphics.h"
 
+extern unsigned g_index;
 
 void square_grid::initialize(
 	graphics* const owner,
-	ID3D12PipelineState* const pipeline_state,
-	ID3D12RootSignature* const root_signature,
-	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
-	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
-	D3D_PRIMITIVE_TOPOLOGY primitive_topology,
+	unsigned const width,
+	unsigned const height,
 	float const cell_side_length
 )
 {
-	render_object::initialize(owner, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology);
+	unsigned const vertices_count = 2 * (width + 1 + height + 1);
+	unsigned const vertices_size = vertices_count * sizeof(math::float2);
+	math::float2*	vertices = static_cast<math::float2*>(malloc(vertices_size));
+	unsigned		index{ 0 };
+
+	for (unsigned i = 0; i <= width; ++i)
+	{
+		vertices[index++] = { (float)i - width / 2.f, -(height / 2.f) };
+		vertices[index++] = { (float)i - width / 2.f, height / 2.f };
+	}
+	for (unsigned i = 0; i <= height; ++i)
+	{
+		vertices[index++] = { -(width / 2.f), (float)i - height / 2.f };
+		vertices[index++] = { width / 2.f, (float)i - height / 2.f };
+	}
+	assert(index == vertices_count);
+
+	render_object::initialize(
+		owner,
+		owner->pipeline_state(pipeline_states::line_one),
+		owner->root_signature(root_signatures::one),
+		owner->vertex_buffer_view(vertices, vertices_size, sizeof(math::float2), g_index++),
+		nullptr, 
+		D3D_PRIMITIVE_TOPOLOGY_LINELIST
+	);
 	m_cell_side_length = cell_side_length;
 }
 

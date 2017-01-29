@@ -30,6 +30,9 @@
     <ClCompile Include="square_field.cpp">
       <Filter>objects\square_field</Filter>
     </ClCompile>
+    <ClCompile Include="hexagon.cpp">
+      <Filter>objects\hexagon</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
@@ -60,6 +63,9 @@
     </ClInclude>
     <ClInclude Include="square_field.h">
       <Filter>objects\square_field</Filter>
+    </ClInclude>
+    <ClInclude Include="hexagon.h">
+      <Filter>objects\hexagon</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -98,6 +104,12 @@
     </Filter>
     <Filter Include="objects\square_field">
       <UniqueIdentifier>{ef1de08a-62bc-4b90-8962-a0c6eae7b09c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="objects\hexagonal_field">
+      <UniqueIdentifier>{da2f826e-cc48-4ef8-ac1f-71bea931c43a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="objects\hexagon">
+      <UniqueIdentifier>{4eaf7cae-f235-4c38-8200-ad9faca3d424}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

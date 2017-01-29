@@ -152,6 +152,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="graphics_initialize.cpp" />
+    <ClCompile Include="hexagon.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="helper_functions.h" />
+    <ClInclude Include="hexagon.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="options.h" />

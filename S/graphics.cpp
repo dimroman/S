@@ -17,6 +17,7 @@ bool operator!=(D3D12_VERTEX_BUFFER_VIEW const left, D3D12_VERTEX_BUFFER_VIEW co
 }
 
 graphics* g_graphics = nullptr;
+unsigned g_index = 0;
 
 graphics::graphics()
 {

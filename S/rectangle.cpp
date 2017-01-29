@@ -1,18 +1,36 @@
 #include "rectangle.h"
+#include "graphics.h"
+
+extern unsigned g_index;
 
 void rectangle::initialize(
 	graphics* const owner,
-	ID3D12PipelineState* const pipeline_state,
-	ID3D12RootSignature* const root_signature,
-	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
-	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
-	D3D_PRIMITIVE_TOPOLOGY primitive_topology,
 	math::float2 const position,
 	float const width,
 	float const height
 )
 {
-	render_object::initialize(owner, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology);
+	static unsigned index = g_index++;
+
+	math::float2 rectangle_vertices[]{
+		{ 0.5f, 0.5f },
+		{ -0.5f, 0.5f },
+		{ 0.5f, -0.5f },
+		{ -0.5f, -0.5f }
+	};
+
+	unsigned rectangle_indices[]{
+		0, 1, 2, 2, 1, 3
+	};
+
+	render_object::initialize(
+		owner,
+		owner->pipeline_state(pipeline_states::triangle_one),
+		owner->root_signature(root_signatures::one),
+		owner->vertex_buffer_view(rectangle_vertices, sizeof(rectangle_vertices), sizeof(math::float2), index),
+		owner->index_buffer_view(rectangle_indices, sizeof(rectangle_indices), DXGI_FORMAT_R32_UINT, index),
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	);
 
 	m_position = position;
 	m_width = width;

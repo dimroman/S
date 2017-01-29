@@ -12,8 +12,8 @@ enum
 enum
 {
 	render_objects_count = 1024 + 512,
-	max_vertex_buffer_views_count = 4,
-	max_index_buffer_views_count = 4,
+	max_vertex_buffer_views_count = 2048,
+	max_index_buffer_views_count = 2048,
 };
 
 namespace root_signatures {
