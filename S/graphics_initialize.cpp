@@ -319,7 +319,6 @@ bool graphics::initialize(HWND main_window_handle)
 
 	initialize_constant_buffers();
 	
-	m_field.initialize( this );
 	ThrowIfFailed(initialization_command_list->Close());
 
 	ID3D12CommandList* cmdsLists[] = { initialization_command_list.Get() };

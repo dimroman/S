@@ -3,7 +3,9 @@
 
 #include "options.h"
 #include "graphics.h"
-// Link necessary d3d12 libraries.
+#include "logic.h"
+#include "camera.h"
+
 #pragma comment(lib,"d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -26,6 +28,8 @@ private:
 	HWND      m_main_window_handle = nullptr;
 
 	graphics			m_graphics;
+	logic				m_logic;
+	world_camera		m_camera;
 };
 
 

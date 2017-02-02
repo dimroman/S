@@ -1,20 +1,14 @@
 #include "logic_object.h"
-#include "graphics.h"
+#include "logic_world.h"
 
 extern unsigned g_current_frame_index;
 
 void logic_object::initialize(
-	graphics* const graphics,
 	logic_world* const owner,
-	ID3D12PipelineState* const pipeline_state,
-	ID3D12RootSignature* const root_signature,
-	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
-	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
-	D3D_PRIMITIVE_TOPOLOGY primitive_topology,
-	per_object_constants const& object_constants
+	render_object* const render_object
 )
 {
-	m_render_object = graphics->new_render_object( this, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology, object_constants);
+	m_render_object = render_object;
 	m_owner = owner;
 	m_owner->add_logic_object(this);
 

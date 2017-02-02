@@ -28,14 +28,8 @@ protected:
 	unsigned selection_mask() const;
 
 	void initialize(
-		graphics* const graphics,
 		logic_world* const owner,
-		ID3D12PipelineState* const pipeline_state,
-		ID3D12RootSignature* const root_signature,
-		D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
-		D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
-		D3D_PRIMITIVE_TOPOLOGY primitive_topology,
-		per_object_constants const& object_constants
+		render_object* const render_object
 	);
 private:
 

@@ -33,14 +33,16 @@ void rectangle::initialize(
 	object_constants.height = m_height;
 
 	super::initialize(
-		graphics,
 		owner,
-		graphics->pipeline_state(pipeline_states::triangle_one),
-		graphics->root_signature(root_signatures::one),
-		graphics->vertex_buffer_view(rectangle_vertices, sizeof(rectangle_vertices), sizeof(math::float2), index),
-		graphics->index_buffer_view(rectangle_indices, sizeof(rectangle_indices), DXGI_FORMAT_R32_UINT, index),
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		object_constants
+		graphics->new_render_object(
+			this,
+			graphics->pipeline_state(pipeline_states::triangle_one),
+			graphics->root_signature(root_signatures::one),
+			graphics->vertex_buffer_view(rectangle_vertices, sizeof(rectangle_vertices), sizeof(math::float2), index),
+			graphics->index_buffer_view(rectangle_indices, sizeof(rectangle_indices), DXGI_FORMAT_R32_UINT, index),
+			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+			object_constants 
+		)
 	);
 
 	m_position = position;

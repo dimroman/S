@@ -4,13 +4,8 @@
 #include "options.h"
 #include <vector>
 #include <process.h>
-#include "input.h"
-#include "camera.h"
 
-extern world_camera g_camera;
 extern options g_options;
-extern input g_input;
-
 extern unsigned g_current_frame_index;
 
 bool operator!=(D3D12_VERTEX_BUFFER_VIEW const left, D3D12_VERTEX_BUFFER_VIEW const right)
@@ -33,13 +28,11 @@ void graphics::update_render_object(per_object_constants const& object_constants
 		sizeof(object_constants)
 	);
 }
-void graphics::update(float const last_frame_time)
+void graphics::update(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed)
 {
-	m_field.update();
-
 	auto const model = math::float4x4::identity();
-	auto const view = g_camera.look_at_right_handed();
-	auto const projection = g_camera.perspective_projection_right_handed();
+	auto const view = look_at_right_handed;
+	auto const projection = perspective_projection_right_handed;
 	math::float4x4 model_view_projection = math::transpose(model*(view*projection));
 
 	m_per_frame_constants[g_current_frame_index].update(0, &model_view_projection, sizeof(model_view_projection));
@@ -56,15 +49,15 @@ void graphics::update(float const last_frame_time)
 
 }
 
-void graphics::run(float const last_frame_time)
+void graphics::run(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed)
 {
 	m_frame_id++;
 
-	update(last_frame_time);
+	update(last_frame_time, look_at_right_handed, perspective_projection_right_handed);
 	auto& command_list = m_command_lists[g_current_frame_index];
 
 	m_direct_command_list_allocators[g_current_frame_index]->Reset();
-	command_list->Reset(m_direct_command_list_allocators[g_current_frame_index].Get(), nullptr);
+	command_list->Reset(m_direct_command_list_allocators[g_current_frame_index].Get(), m_render_objects[0].pipeline_state());
 
 	ID3D12DescriptorHeap* const ppHeaps[] { 
 		m_descriptor_heaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Get() 
@@ -93,7 +86,6 @@ void graphics::run(float const last_frame_time)
 	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view = nullptr;
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view = nullptr;
 
-	command_list->SetPipelineState(m_render_objects[0].pipeline_state());
 	command_list->SetGraphicsRootSignature(m_render_objects[0].root_signature());
 	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_constants[g_current_frame_index].gpu_handle);
 	
@@ -192,7 +184,7 @@ render_object* graphics::new_render_object(
 	per_object_constants const& object_constants
 )
 {
-	m_render_objects[m_render_objects_count].initialize(this, owner, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology, object_constants);
+	m_render_objects[m_render_objects_count].initialize(owner, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology);
 	render_object* const result = &m_render_objects[m_render_objects_count];
 
 	for (unsigned i = 0; i < frames_count; ++i)

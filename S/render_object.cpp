@@ -1,24 +1,21 @@
 #include "render_object.h"
-#include "graphics.h"
+#include "render_object_owner.h"
 
 void render_object::initialize(
-	graphics* const graphics,
 	render_object_owner* const owner,
 	ID3D12PipelineState* const pipeline_state, 
 	ID3D12RootSignature* const root_signature, 
 	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view, 
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view, 
-	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-	per_object_constants const& object_constants
+	D3D_PRIMITIVE_TOPOLOGY const primitive_topology
 )
-{
+{	
+	m_owner = owner;
 	m_pipeline_state = pipeline_state;
 	m_root_signature = root_signature;
 	m_vertex_buffer_view = vertex_buffer_view;
 	m_index_buffer_view = index_buffer_view;
 	m_primitive_topology = primitive_topology;
-	
-	m_owner = owner;
 }
 
 bool render_object::update(per_object_constants& object_constants) 

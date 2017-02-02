@@ -8,9 +8,8 @@
 #include "sampler.h"
 #include "math.h"
 #include "render_object.h"
-#include "square_field.h"
-#include "hexagon_field.h"
 #include <utility>
+#include "global_defines.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -18,7 +17,7 @@ class graphics
 {
 public:
 			bool						initialize				(HWND main_window_handle);
-			void						run						(float const last_frame_time);
+			void						run						(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed);
 			void						finalize				();
 
 			UINT						descriptor_size			(D3D12_DESCRIPTOR_HEAP_TYPE type);
@@ -53,7 +52,7 @@ public:
 private:
 			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
 
-			void						update					(float const last_frame_time);
+			void						update					(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed);
 			void						initialize_constant_buffers();
 			
 private:
@@ -102,8 +101,6 @@ private:
 private:
 	constant_buffer_data m_per_frame_constants[frames_count];
 
-	//hexagon_field m_field;
-	square_field m_field;
 }; // class graphics
 
 #endif // #ifndef GRAPHICS_H_INCLUDED

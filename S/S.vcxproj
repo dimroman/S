@@ -156,6 +156,7 @@
     <ClCompile Include="hexagon_field.cpp" />
     <ClCompile Include="hexagon_frame.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="logic.cpp" />
     <ClCompile Include="logic_object.cpp" />
     <ClCompile Include="logic_world.cpp" />
     <ClCompile Include="main.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="hexagon_field.h" />
     <ClInclude Include="hexagon_frame.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="logic.h" />
     <ClInclude Include="logic_object.h" />
     <ClInclude Include="logic_world.h" />
     <ClInclude Include="math.h" />

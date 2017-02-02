@@ -1,12 +1,10 @@
 #include "application.h"
-#include "camera.h"
 #include "input.h"
 #include <string>
 #include "StepTimer.h"
 
 input g_input;
 options g_options;
-world_camera g_camera;
 StepTimer g_timer;
 
 application::application(HINSTANCE handle_instance)	: 
@@ -125,7 +123,8 @@ int application::run()
 	if (!m_graphics.initialize(m_main_window_handle))
 		return 0;
 
-	g_camera.set_look_position({ 0.0f, 0.0f, 0.0f });
+	m_logic.initialize(m_graphics);
+	m_camera.set_look_position({ 0.0f, 0.0f, 0.0f });
 	g_input.initialize(this);
 	
 	MSG msg = { 0 };
@@ -144,19 +143,20 @@ int application::run()
 			float const frameChange = 2.0f * last_frame_time;
 
 			if (g_input.leftArrowPressed)
-				g_camera.move_x(-frameChange);
+				m_camera.move_x(-frameChange);
 			if (g_input.rightArrowPressed)
-				g_camera.move_x(frameChange);
+				m_camera.move_x(frameChange);
 			if (g_input.forward_arrow_pressed)
-				g_camera.move_z(-frameChange);
+				m_camera.move_z(-frameChange);
 			if (g_input.backward_arrow_pressed)
-				g_camera.move_z(frameChange);
+				m_camera.move_z(frameChange);
 			if (g_input.last_dx != 0.0f)
-				g_camera.rotate_around_up(-g_input.last_dx);
+				m_camera.rotate_around_up(-g_input.last_dx);
 			if (g_input.last_dy != 0.0f)
-				g_camera.rotate_around_x(g_input.last_dy);
+				m_camera.rotate_around_x(g_input.last_dy);
 
-			m_graphics.run(last_frame_time);
+			m_logic.update();
+			m_graphics.run(last_frame_time, m_camera.look_at_right_handed(), m_camera.perspective_projection_right_handed());
 			
 			static int frames_count = 0;
 			static float total_frame_time = 0.0f;
@@ -184,6 +184,7 @@ int application::run()
 	}
 
 	m_graphics.finalize();
+	m_logic.finalize();
 
 	return (int)msg.wParam;
 }
