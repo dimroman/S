@@ -3,6 +3,9 @@
 
 #include <d3d12.h>
 #include "math.h"
+#include <functional>
+
+class graphics;
 
 enum 
 { 
@@ -14,6 +17,11 @@ enum
 	render_objects_count = 1024 + 512,
 	max_vertex_buffer_views_count = 2048,
 	max_index_buffer_views_count = 2048,
+};
+
+enum
+{
+	max_neighbours_count = 8,
 };
 
 namespace root_signatures {
@@ -31,13 +39,6 @@ namespace pipeline_states {
 	};
 }
 
-namespace index_buffer_views {
-	enum {
-		rectangle,
-		count,
-	};
-}
-
 struct per_object_constants
 {
 	math::float4 color;
@@ -51,8 +52,6 @@ struct per_frame_constants
 	math::float4x4 model_view_projection;
 	per_object_constants object_constants[render_objects_count];
 };
-
-class graphics;
 
 class constant_buffer_data
 {
@@ -75,30 +74,25 @@ class render_object
 {
 public:
 	void initialize(
-		graphics* const owner, 
+		graphics* const graphics,
 		ID3D12PipelineState* const pipeline_state, 
 		ID3D12RootSignature* const root_signature, 
 		D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view, 
 		D3D12_INDEX_BUFFER_VIEW const* index_buffer_view, 
-		D3D_PRIMITIVE_TOPOLOGY primitive_topology
+		D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
+		per_object_constants const& object_constants
 	);
-	virtual bool update(per_object_constants& object_constants) = 0;
-	
-	inline void set_selected	(bool const value)	{ m_is_selected = value; m_need_to_be_updated = frames_count; }
-	inline void set_highlighted	(bool const value)	{ m_is_highlighted = value; m_need_to_be_updated = frames_count; }
+
+	virtual bool update(per_object_constants& object_constants) { return false; };
+	virtual void set_selected(bool const value) { }
+	virtual void set_highlighted(bool const value) { }
 
 	inline ID3D12PipelineState*					pipeline_state()		const { return m_pipeline_state; }
 	inline ID3D12RootSignature*					root_signature()		const { return m_root_signature; }
 	inline D3D_PRIMITIVE_TOPOLOGY				primitive_topology()	const { return m_primitive_topology; }
 	inline D3D12_VERTEX_BUFFER_VIEW const*		vertex_buffer_view()	const { return m_vertex_buffer_view; }
 	inline D3D12_INDEX_BUFFER_VIEW const*		index_buffer_view()		const { return m_index_buffer_view; }
-
-			bool								need_to_be_updated();
-
-protected:
-	bool m_is_selected = false;
-	bool m_is_highlighted = false;
-	
+				
 private:
 	ID3D12PipelineState* m_pipeline_state = nullptr;
 	ID3D12RootSignature* m_root_signature = nullptr;
@@ -107,8 +101,6 @@ private:
 
 	D3D12_VERTEX_BUFFER_VIEW const* m_vertex_buffer_view;
 	D3D12_INDEX_BUFFER_VIEW const* m_index_buffer_view;	
-
-	unsigned m_need_to_be_updated = 0;
 };
 
 #endif // #ifndef RENDER_OBJECT_H_INCLUDED

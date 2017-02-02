@@ -5,6 +5,8 @@
 
 extern options g_options;
 
+unsigned g_current_frame_index = 0;
+
 UINT graphics::descriptor_size(D3D12_DESCRIPTOR_HEAP_TYPE type)
 {
 	return m_descriptor_sizes[type];
@@ -229,6 +231,12 @@ D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, 
 bool graphics::initialize(HWND main_window_handle)
 {
 	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_per_frame_constants));
+
+	for (auto& t : m_swap_chain_buffers)
+		t.preinitialize(this, false, false, true);
+
+	for (auto& t : m_indices_render_targets)
+		t.preinitialize(this, false, false, true);
 	
 #if defined(DEBUG) || defined(_DEBUG) 
 	// Enable the D3D12 debug layer.
@@ -269,7 +277,7 @@ bool graphics::initialize(HWND main_window_handle)
 	ThrowIfFailed(dxgi_factory->CreateSwapChainForHwnd( m_command_queue.Get(), main_window_handle, &swapChainDesc, nullptr, nullptr, &swapChain ));
 	ThrowIfFailed(dxgi_factory->MakeWindowAssociation( main_window_handle, DXGI_MWA_NO_ALT_ENTER ));
 	ThrowIfFailed(swapChain.As(&m_swap_chain));
-	m_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+	g_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
 		
 	if (m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] > 0)
 		create_descriptor_heap( m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 );
@@ -310,8 +318,8 @@ bool graphics::initialize(HWND main_window_handle)
 	m_scissor_rectangle = { 0, 0, g_options.screen_width, g_options.screen_height };
 
 	initialize_constant_buffers();
-
-	m_square_field.initialize( this );
+	
+	m_field.initialize( this );
 	ThrowIfFailed(initialization_command_list->Close());
 
 	ID3D12CommandList* cmdsLists[] = { initialization_command_list.Get() };

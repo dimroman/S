@@ -10,8 +10,7 @@ world_camera g_camera;
 StepTimer g_timer;
 
 application::application(HINSTANCE handle_instance)	: 
-	m_application_instance_handle(handle_instance),
-	m_graphics()
+	m_application_instance_handle(handle_instance)
 {
 
 }

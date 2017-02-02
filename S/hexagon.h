@@ -1,20 +1,20 @@
 #ifndef HEXAGON_H_INCLUDED
 #define HEXAGON_H_INCLUDED
 
-#include "render_object.h"
+#include "logic_object.h"
 
 class graphics;
+class logic_world;
 
-class hexagon : public render_object
+class hexagon : public logic_object
 {
+	using super = logic_object;
+public:
+	enum { max_neighbours_count = 8 };
 public:
 	void initialize(
-		graphics* const owner,
-		ID3D12PipelineState* const pipeline_state,
-		ID3D12RootSignature* const root_signature,
-		D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
-		D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
-		D3D_PRIMITIVE_TOPOLOGY primitive_topology,
+		graphics* const graphics,
+		logic_world* const owner,
 		math::float2 const position,
 		float const radii
 	);

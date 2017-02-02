@@ -4,7 +4,8 @@
 extern unsigned g_index;
 
 void rectangle::initialize(
-	graphics* const owner,
+	graphics* const graphics,
+	logic_world* const owner,
 	math::float2 const position,
 	float const width,
 	float const height
@@ -20,16 +21,26 @@ void rectangle::initialize(
 	};
 
 	unsigned rectangle_indices[]{
-		0, 1, 2, 2, 1, 3
+		0, 1, 2, 
+		2, 1, 3
 	};
 
-	render_object::initialize(
+	per_object_constants object_constants;
+
+	object_constants.color = { 1.0f, 0.0f, 0.0f, 1.0f };
+	object_constants.position = m_position;
+	object_constants.width = m_width;
+	object_constants.height = m_height;
+
+	super::initialize(
+		graphics,
 		owner,
-		owner->pipeline_state(pipeline_states::triangle_one),
-		owner->root_signature(root_signatures::one),
-		owner->vertex_buffer_view(rectangle_vertices, sizeof(rectangle_vertices), sizeof(math::float2), index),
-		owner->index_buffer_view(rectangle_indices, sizeof(rectangle_indices), DXGI_FORMAT_R32_UINT, index),
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+		graphics->pipeline_state(pipeline_states::triangle_one),
+		graphics->root_signature(root_signatures::one),
+		graphics->vertex_buffer_view(rectangle_vertices, sizeof(rectangle_vertices), sizeof(math::float2), index),
+		graphics->index_buffer_view(rectangle_indices, sizeof(rectangle_indices), DXGI_FORMAT_R32_UINT, index),
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+		object_constants
 	);
 
 	m_position = position;
@@ -39,14 +50,18 @@ void rectangle::initialize(
 
 bool rectangle::update(per_object_constants& object_constants)
 {
-	if (!render_object::need_to_be_updated())
+	if (!super::update(object_constants))
 		return false;
 
-	object_constants.color = { 0.9f, 0.8f, 0.7f, 1.0f };
-	if (m_is_selected)
-		object_constants.color += { 0.1f, 0.2f, 0.3f, 0.0f };
-	if (m_is_highlighted)
-		object_constants.color -= { 0.5f, 0.5f, 0.5f, 0.0f };
+	unsigned const selection_mask = super::selection_mask();
+
+	object_constants.color = { 1.0f, 0.0f, 0.0f, 1.0f };
+	if (selection_mask & object_is_selected)
+		object_constants.color = { 0.0f, 1.0f, 0.0f, 1.0f };
+	if (selection_mask & neighbour_is_selected)
+		object_constants.color = { 0.0f, 0.5f, 0.0f, 1.0f };
+	if (selection_mask & object_is_highlighted)
+		object_constants.color = { 0.0f, 0.0f, 1.0f, 1.0f };
 
 	object_constants.position = m_position;
 	object_constants.width = m_width;

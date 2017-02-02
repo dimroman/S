@@ -27,26 +27,20 @@ void square_grid::initialize(
 	}
 	assert(index == vertices_count);
 
-	render_object::initialize(
+	per_object_constants object_constants;
+
+	object_constants.color = math::float4(0.1f, 0.2f, 0.3f, 1.0f);
+	object_constants.position = { 0.0f, 0.0f };
+	object_constants.width = cell_side_length;
+	object_constants.height = cell_side_length;
+
+	super::initialize(
 		owner,
 		owner->pipeline_state(pipeline_states::line_one),
 		owner->root_signature(root_signatures::one),
 		owner->vertex_buffer_view(vertices, vertices_size, sizeof(math::float2), g_index++),
 		nullptr, 
-		D3D_PRIMITIVE_TOPOLOGY_LINELIST
+		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
+		object_constants
 	);
-	m_cell_side_length = cell_side_length;
-}
-
-bool square_grid::update(per_object_constants& object_constants)
-{	
-	if (!render_object::need_to_be_updated())
-		return false;
-
-	object_constants.color = math::float4(0.1f, 0.2f, 0.3f, 1.0f);
-	object_constants.position = { 0.0f, 0.0f };
-	object_constants.width = m_cell_side_length;
-	object_constants.height = m_cell_side_length;
-
-	return true;
 }

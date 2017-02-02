@@ -4,9 +4,8 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="sampler.cpp" />
     <ClCompile Include="square_grid.cpp">
-      <Filter>objects\square_grid</Filter>
+      <Filter>logic\logic_object\square_grid</Filter>
     </ClCompile>
     <ClCompile Include="application.cpp">
       <Filter>application</Filter>
@@ -17,33 +16,48 @@
     <ClCompile Include="graphics_initialize.cpp">
       <Filter>graphics</Filter>
     </ClCompile>
-    <ClCompile Include="texture.cpp" />
     <ClCompile Include="render_object.cpp">
-      <Filter>render_object</Filter>
+      <Filter>graphics\render_object</Filter>
     </ClCompile>
     <ClCompile Include="rectangle.cpp">
-      <Filter>objects\rectangle</Filter>
+      <Filter>logic\logic_object\rectangle</Filter>
     </ClCompile>
     <ClCompile Include="math.cpp">
       <Filter>math</Filter>
     </ClCompile>
     <ClCompile Include="square_field.cpp">
-      <Filter>objects\square_field</Filter>
+      <Filter>logic\logic_world\square_field</Filter>
     </ClCompile>
     <ClCompile Include="hexagon.cpp">
-      <Filter>objects\hexagon</Filter>
+      <Filter>logic\logic_object\hexagon</Filter>
+    </ClCompile>
+    <ClCompile Include="hexagon_field.cpp">
+      <Filter>logic\logic_world\hexagonal_field</Filter>
+    </ClCompile>
+    <ClCompile Include="hexagon_frame.cpp">
+      <Filter>logic\logic_object\hexagon_frame</Filter>
+    </ClCompile>
+    <ClCompile Include="texture.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="sampler.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="logic_object.cpp">
+      <Filter>logic\logic_object</Filter>
+    </ClCompile>
+    <ClCompile Include="logic_world.cpp">
+      <Filter>logic\logic_world</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
-    <ClInclude Include="d3dx12.h" />
     <ClInclude Include="helper_functions.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="options.h" />
-    <ClInclude Include="sampler.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="square_grid.h">
-      <Filter>objects\square_grid</Filter>
+      <Filter>logic\logic_object\square_grid</Filter>
     </ClInclude>
     <ClInclude Include="application.h">
       <Filter>application</Filter>
@@ -51,76 +65,105 @@
     <ClInclude Include="graphics.h">
       <Filter>graphics</Filter>
     </ClInclude>
-    <ClInclude Include="texture.h" />
     <ClInclude Include="render_object.h">
-      <Filter>render_object</Filter>
+      <Filter>graphics\render_object</Filter>
     </ClInclude>
     <ClInclude Include="rectangle.h">
-      <Filter>objects\rectangle</Filter>
+      <Filter>logic\logic_object\rectangle</Filter>
     </ClInclude>
     <ClInclude Include="math.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="square_field.h">
-      <Filter>objects\square_field</Filter>
+      <Filter>logic\logic_world\square_field</Filter>
     </ClInclude>
     <ClInclude Include="hexagon.h">
-      <Filter>objects\hexagon</Filter>
+      <Filter>logic\logic_object\hexagon</Filter>
+    </ClInclude>
+    <ClInclude Include="hexagon_field.h">
+      <Filter>logic\logic_world\hexagonal_field</Filter>
+    </ClInclude>
+    <ClInclude Include="hexagon_frame.h">
+      <Filter>logic\logic_object\hexagon_frame</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dx12.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="sampler.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="logic_object.h">
+      <Filter>logic\logic_object</Filter>
+    </ClInclude>
+    <ClInclude Include="logic_world.h">
+      <Filter>logic\logic_world</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="shaders">
-      <UniqueIdentifier>{db6180b4-a29f-4470-920b-e74a7dab092e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="application">
       <UniqueIdentifier>{0f507002-5040-4ad7-adec-9bc170b8710a}</UniqueIdentifier>
     </Filter>
     <Filter Include="graphics">
       <UniqueIdentifier>{37561134-0615-4c4c-b687-d069a0492480}</UniqueIdentifier>
     </Filter>
-    <Filter Include="shaders\pixel">
-      <UniqueIdentifier>{bb4dd025-2d61-4c7a-9449-e5f447ac3512}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="shaders\vertex">
-      <UniqueIdentifier>{ea219afe-b177-4c44-a8d4-34f70bf34073}</UniqueIdentifier>
-    </Filter>
     <Filter Include="math">
       <UniqueIdentifier>{7e623c38-4456-4801-a2c1-f2ca17948dbc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="shaders\common">
-      <UniqueIdentifier>{9be39e2b-5c59-464e-b357-be4cc51fccd2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render_object">
+    <Filter Include="graphics\render_object">
       <UniqueIdentifier>{d79f716c-1dd0-4f4b-af05-ce37aad40702}</UniqueIdentifier>
     </Filter>
-    <Filter Include="objects">
+    <Filter Include="graphics\shaders">
+      <UniqueIdentifier>{db6180b4-a29f-4470-920b-e74a7dab092e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="graphics\shaders\pixel">
+      <UniqueIdentifier>{bb4dd025-2d61-4c7a-9449-e5f447ac3512}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="graphics\shaders\vertex">
+      <UniqueIdentifier>{ea219afe-b177-4c44-a8d4-34f70bf34073}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="graphics\shaders\common">
+      <UniqueIdentifier>{9be39e2b-5c59-464e-b357-be4cc51fccd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="logic">
       <UniqueIdentifier>{22b29dbd-f569-4650-a2be-185fe4581b70}</UniqueIdentifier>
     </Filter>
-    <Filter Include="objects\rectangle">
-      <UniqueIdentifier>{cd0171c6-c0b7-4895-b8a2-a6e688e4e52a}</UniqueIdentifier>
+    <Filter Include="logic\logic_object">
+      <UniqueIdentifier>{112338a8-c557-4dd0-ab0e-66eb6762a688}</UniqueIdentifier>
     </Filter>
-    <Filter Include="objects\square_grid">
-      <UniqueIdentifier>{4c3a8679-24e6-4849-b259-ad972b3e8f67}</UniqueIdentifier>
+    <Filter Include="logic\logic_world">
+      <UniqueIdentifier>{1d110a89-a8b0-481b-aaac-26962f543e9a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="objects\square_field">
-      <UniqueIdentifier>{ef1de08a-62bc-4b90-8962-a0c6eae7b09c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="objects\hexagonal_field">
+    <Filter Include="logic\logic_world\hexagonal_field">
       <UniqueIdentifier>{da2f826e-cc48-4ef8-ac1f-71bea931c43a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="objects\hexagon">
+    <Filter Include="logic\logic_world\square_field">
+      <UniqueIdentifier>{ef1de08a-62bc-4b90-8962-a0c6eae7b09c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="logic\logic_object\hexagon">
       <UniqueIdentifier>{4eaf7cae-f235-4c38-8200-ad9faca3d424}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="logic\logic_object\hexagon_frame">
+      <UniqueIdentifier>{2e8fec52-27a5-49a4-bfef-1d35bf072d5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="logic\logic_object\rectangle">
+      <UniqueIdentifier>{cd0171c6-c0b7-4895-b8a2-a6e688e4e52a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="logic\logic_object\square_grid">
+      <UniqueIdentifier>{4c3a8679-24e6-4849-b259-ad972b3e8f67}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color_id.hlsl">
-      <Filter>shaders\pixel</Filter>
+      <Filter>graphics\shaders\pixel</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\xy_position_x_model_view_projection.hlsl">
-      <Filter>shaders\vertex</Filter>
+      <Filter>graphics\shaders\vertex</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\common.hlsl">
-      <Filter>shaders\common</Filter>
+      <Filter>graphics\shaders\common</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

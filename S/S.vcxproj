@@ -153,7 +153,11 @@
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="graphics_initialize.cpp" />
     <ClCompile Include="hexagon.cpp" />
+    <ClCompile Include="hexagon_field.cpp" />
+    <ClCompile Include="hexagon_frame.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="logic_object.cpp" />
+    <ClCompile Include="logic_world.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="render_object.cpp" />
@@ -170,7 +174,11 @@
     <ClInclude Include="graphics.h" />
     <ClInclude Include="helper_functions.h" />
     <ClInclude Include="hexagon.h" />
+    <ClInclude Include="hexagon_field.h" />
+    <ClInclude Include="hexagon_frame.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="logic_object.h" />
+    <ClInclude Include="logic_world.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="render_object.h" />

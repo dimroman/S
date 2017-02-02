@@ -9,6 +9,7 @@
 #include "math.h"
 #include "render_object.h"
 #include "square_field.h"
+#include "hexagon_field.h"
 #include <utility>
 
 using Microsoft::WRL::ComPtr;
@@ -16,8 +17,6 @@ using Microsoft::WRL::ComPtr;
 class graphics
 {
 public:
-										graphics				();
-
 			bool						initialize				(HWND main_window_handle);
 			void						run						(float const last_frame_time);
 			void						finalize				();
@@ -33,13 +32,15 @@ public:
 
 			void						select_object			(int const x, int const y);
 			void						highlight_object		(int const x, int const y);
-			void						add_render_object		(render_object* const object);
+			unsigned					add_render_object		(render_object* const object);
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
 
 			ID3D12PipelineState*		pipeline_state			(unsigned const id);
 			ID3D12RootSignature*		root_signature			(unsigned const id);
 			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view		(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size, unsigned const index);
 			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view		(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format, unsigned const index);
+
+			void						update_render_object(per_object_constants const& object_constants, unsigned const id, unsigned const current_frame_index);
 			
 private:
 			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
@@ -54,7 +55,6 @@ private:
 	ComPtr<IDXGISwapChain3>				m_swap_chain;
 	texture								m_swap_chain_buffers[frames_count];
 	texture								m_indices_render_targets[frames_count];
-	int									m_current_frame_index = 0;
 	unsigned							m_frame_id = 0;
 
 	ComPtr<ID3D12Fence>					m_fence;
@@ -65,9 +65,9 @@ private:
 	ComPtr<ID3D12CommandQueue>			m_command_queue;
 	ComPtr<ID3D12CommandAllocator>		m_direct_command_list_allocators[frames_count];
 	ComPtr<ID3D12GraphicsCommandList>	m_command_lists[frames_count];
-		
+
 	render_object*						m_render_objects[render_objects_count];
-	unsigned int						m_render_objects_count = 0;
+	unsigned							m_render_objects_count = 0;
 
 	render_object*						m_selected_render_object = nullptr;
 	render_object*						m_highlighted_render_object = nullptr;
@@ -89,14 +89,13 @@ private:
 	unsigned m_vertex_buffer_views_count{ 0 };
 	std::pair<D3D12_INDEX_BUFFER_VIEW, unsigned> m_index_buffer_views[max_index_buffer_views_count];
 	unsigned m_index_buffer_views_count{ 0 };	
-
-	//std::pair<ComPtr<ID3DBlob>, unsigned>
 private:
 
 private:
 	constant_buffer_data m_per_frame_constants[frames_count];
 
-	square_field m_square_field;
+	//hexagon_field m_field;
+	square_field m_field;
 }; // class graphics
 
 #endif // #ifndef GRAPHICS_H_INCLUDED

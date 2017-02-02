@@ -2,15 +2,16 @@
 #include "graphics.h"
 
 void render_object::initialize(
-	graphics* const owner, 
+	graphics* const graphics,
 	ID3D12PipelineState* const pipeline_state, 
 	ID3D12RootSignature* const root_signature, 
 	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view, 
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view, 
-	D3D_PRIMITIVE_TOPOLOGY primitive_topology
+	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
+	per_object_constants const& object_constants
 )
 {
-	m_need_to_be_updated = frames_count;
+	unsigned const id = graphics->add_render_object(this);
 
 	m_pipeline_state = pipeline_state;
 	m_root_signature = root_signature;
@@ -18,10 +19,6 @@ void render_object::initialize(
 	m_index_buffer_view = index_buffer_view;
 	m_primitive_topology = primitive_topology;
 
-	owner->add_render_object(this);
-}
-
-bool render_object::need_to_be_updated()
-{
-	return m_need_to_be_updated && (--m_need_to_be_updated + 1);
+	for (unsigned i = 0; i < frames_count; ++i)
+		graphics->update_render_object(object_constants, id, i);
 }

@@ -2,15 +2,20 @@
 #define RECTANGLE_H_INCLUDED
 
 #include "math.h"
-#include "render_object.h"
+#include "logic_object.h"
 
 class graphics;
+class logic_world;
 
-class rectangle : public render_object
+class rectangle : public logic_object
 {
+	using super = logic_object;
+public:
+	enum { max_neighbours_count = 8 };
 public:
 	void initialize(
-		graphics* const owner,
+		graphics* const graphics,
+		logic_world* const owner,
 		math::float2 const position,
 		float const width,
 		float const height

@@ -1,15 +1,19 @@
 #ifndef SQUARE_FIELD_H_INCLUDED
 #define SQUARE_FIELD_H_INCLUDED
 
+#include "logic_world.h"
 #include "rectangle.h"
 #include "square_grid.h"
 
 class graphics;
 
-class square_field
+class square_field : public logic_world
 {
+	using super = logic_world;
 public:
 	void initialize( graphics* const owner );
+	virtual void update() override;
+
 private:
 	enum {
 		field_width = 32,

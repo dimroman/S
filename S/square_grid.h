@@ -8,6 +8,7 @@ class graphics;
 
 class square_grid : public render_object
 {
+	using super = render_object;
 public:
 	void initialize(
 		graphics* const owner,
@@ -15,9 +16,8 @@ public:
 		unsigned const height,
 		float const cell_side_length
 	);
-	virtual bool update(per_object_constants& object_constants) override;
+	virtual bool update(per_object_constants& object_constants) override { return false; }
 private:
-	float m_cell_side_length;
 };
 
 #endif // #ifndef SQUARE_GRID_H_INCLUDED
