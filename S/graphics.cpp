@@ -48,7 +48,7 @@ void graphics::update(float const last_frame_time)
 
 	for (unsigned i = 0; i < m_render_objects_count; ++i)
 	{
-		if (!m_render_objects[i]->update(object_constants))
+		if (!m_render_objects[i].update(object_constants))
 			continue;
 
 		update_render_object(object_constants, i, g_current_frame_index);
@@ -93,37 +93,37 @@ void graphics::run(float const last_frame_time)
 	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view = nullptr;
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view = nullptr;
 
-	command_list->SetPipelineState(m_render_objects[0]->pipeline_state());
-	command_list->SetGraphicsRootSignature(m_render_objects[0]->root_signature());
+	command_list->SetPipelineState(m_render_objects[0].pipeline_state());
+	command_list->SetGraphicsRootSignature(m_render_objects[0].root_signature());
 	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_constants[g_current_frame_index].gpu_handle);
 	
 	for (unsigned i = 0; i < m_render_objects_count; ++i )
 	{
 		auto const& object = m_render_objects[i];
 
-		if (object->pipeline_state() != pipeline_state)
+		if (object.pipeline_state() != pipeline_state)
 		{
-			pipeline_state = object->pipeline_state();
-			command_list->SetPipelineState(object->pipeline_state());
+			pipeline_state = object.pipeline_state();
+			command_list->SetPipelineState(object.pipeline_state());
 		}
-		if (object->root_signature() != root_signature)
+		if (object.root_signature() != root_signature)
 		{
-			root_signature = object->root_signature();
+			root_signature = object.root_signature();
 			command_list->SetGraphicsRootSignature(root_signature);
 		}			
-		if (object->primitive_topology() != primitive_topology)
+		if (object.primitive_topology() != primitive_topology)
 		{
-			primitive_topology = object->primitive_topology();
+			primitive_topology = object.primitive_topology();
 			command_list->IASetPrimitiveTopology(primitive_topology);
 		}
-		if (object->vertex_buffer_view() != vertex_buffer_view)
+		if (object.vertex_buffer_view() != vertex_buffer_view)
 		{
-			vertex_buffer_view = object->vertex_buffer_view();
+			vertex_buffer_view = object.vertex_buffer_view();
 			command_list->IASetVertexBuffers(0, 1, vertex_buffer_view);
 		}
-		if (object->index_buffer_view() != index_buffer_view)
+		if (object.index_buffer_view() != index_buffer_view)
 		{
-			index_buffer_view = object->index_buffer_view();
+			index_buffer_view = object.index_buffer_view();
 			if (index_buffer_view)
 				command_list->IASetIndexBuffer(index_buffer_view);
 		}
@@ -163,31 +163,42 @@ void graphics::run(float const last_frame_time)
 void graphics::select_object(int const x, int const y)
 {
 	auto const selected_object_id = m_indices_render_targets[g_current_frame_index].readback_value(x + y * g_options.screen_width);
-	if (m_selected_render_object == m_render_objects[selected_object_id])
+	if (m_selected_render_object_id == selected_object_id)
 		return;
 	
-	if ( m_selected_render_object)
-		m_selected_render_object->set_selected(false);
-	m_selected_render_object = m_render_objects[selected_object_id];
-	m_selected_render_object->set_selected(true);
+	m_render_objects[m_selected_render_object_id].set_selected(false);
+	m_selected_render_object_id = selected_object_id;
+	m_render_objects[m_selected_render_object_id].set_selected(true);
 }
 
 void graphics::highlight_object(int const x, int const y)
 {
 	auto const highlighted_object_id = m_indices_render_targets[g_current_frame_index].readback_value(x + y * g_options.screen_width);
-	if (m_highlighted_render_object == m_render_objects[highlighted_object_id])
+	if (m_highlighted_render_object_id == highlighted_object_id)
 		return;
 
-	if (m_highlighted_render_object)
-		m_highlighted_render_object->set_highlighted(false);
-	m_highlighted_render_object = m_render_objects[highlighted_object_id];
-	m_highlighted_render_object->set_highlighted(true);
+	m_render_objects[m_highlighted_render_object_id].set_highlighted(false);
+	m_highlighted_render_object_id = highlighted_object_id;
+	m_render_objects[m_highlighted_render_object_id].set_highlighted(true);
 }
 
-unsigned graphics::add_render_object(render_object* const object)
+render_object* graphics::new_render_object(
+	render_object_owner* const owner,
+	ID3D12PipelineState* const pipeline_state,
+	ID3D12RootSignature* const root_signature,
+	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
+	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
+	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
+	per_object_constants const& object_constants
+)
 {
-	unsigned const result = m_render_objects_count;
-	m_render_objects[m_render_objects_count++] = object;
+	m_render_objects[m_render_objects_count].initialize(this, owner, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology, object_constants);
+	render_object* const result = &m_render_objects[m_render_objects_count];
+
+	for (unsigned i = 0; i < frames_count; ++i)
+		update_render_object(object_constants, m_render_objects_count, i);
+
+	m_render_objects_count++;
 	assert(m_render_objects_count < render_objects_count);
 	return result;
 }

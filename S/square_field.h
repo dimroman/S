@@ -11,7 +11,7 @@ class square_field : public logic_world
 {
 	using super = logic_world;
 public:
-	void initialize( graphics* const owner );
+	void initialize( graphics* const graphics);
 	virtual void update() override;
 
 private:

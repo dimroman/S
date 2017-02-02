@@ -2,6 +2,7 @@
 #define HEXAGON_H_INCLUDED
 
 #include "logic_object.h"
+#include "math.h"
 
 class graphics;
 class logic_world;

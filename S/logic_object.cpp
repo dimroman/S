@@ -14,7 +14,7 @@ void logic_object::initialize(
 	per_object_constants const& object_constants
 )
 {
-	super::initialize(graphics, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology, object_constants);
+	m_render_object = graphics->new_render_object( this, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology, object_constants);
 	m_owner = owner;
 	m_owner->add_logic_object(this);
 

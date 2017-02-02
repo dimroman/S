@@ -6,11 +6,7 @@
 #include <functional>
 
 class graphics;
-
-enum 
-{ 
-	frames_count = 2, 
-};
+class render_object_owner;
 
 enum
 {
@@ -75,6 +71,7 @@ class render_object
 public:
 	void initialize(
 		graphics* const graphics,
+		render_object_owner* const owner,
 		ID3D12PipelineState* const pipeline_state, 
 		ID3D12RootSignature* const root_signature, 
 		D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view, 
@@ -83,9 +80,9 @@ public:
 		per_object_constants const& object_constants
 	);
 
-	virtual bool update(per_object_constants& object_constants) { return false; };
-	virtual void set_selected(bool const value) { }
-	virtual void set_highlighted(bool const value) { }
+	bool update(per_object_constants& object_constants);
+	void set_selected(bool const value);
+	void set_highlighted(bool const value);
 
 	inline ID3D12PipelineState*					pipeline_state()		const { return m_pipeline_state; }
 	inline ID3D12RootSignature*					root_signature()		const { return m_root_signature; }
@@ -101,6 +98,8 @@ private:
 
 	D3D12_VERTEX_BUFFER_VIEW const* m_vertex_buffer_view;
 	D3D12_INDEX_BUFFER_VIEW const* m_index_buffer_view;	
+
+	render_object_owner* m_owner = nullptr;
 };
 
 #endif // #ifndef RENDER_OBJECT_H_INCLUDED

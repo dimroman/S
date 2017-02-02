@@ -49,6 +49,9 @@
     <ClCompile Include="logic_world.cpp">
       <Filter>logic\logic_world</Filter>
     </ClCompile>
+    <ClCompile Include="render_object_owner.cpp">
+      <Filter>logic</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
@@ -101,6 +104,10 @@
     <ClInclude Include="logic_world.h">
       <Filter>logic\logic_world</Filter>
     </ClInclude>
+    <ClInclude Include="render_object_owner.h">
+      <Filter>logic</Filter>
+    </ClInclude>
+    <ClInclude Include="global_defines.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="application">

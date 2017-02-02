@@ -1,7 +1,7 @@
 #include "square_field.h"
 #include "graphics.h"
 
-void square_field::initialize( graphics* const owner )
+void square_field::initialize( graphics* const graphics)
 {
 	for (int i = 0; i < field_width; i++)
 	{
@@ -11,7 +11,7 @@ void square_field::initialize( graphics* const owner )
 			float const position_y = m_cell_side_length*j - m_cell_side_length*(field_height - 1) / 2;
 			int const index = i + j * field_width;
 			m_grid_cells[index].initialize(
-				owner,
+				graphics,
 				this,
 				{ position_x, position_y },
 				m_cell_side_length,
@@ -21,7 +21,7 @@ void square_field::initialize( graphics* const owner )
 	}
 	
 	m_square_grid.initialize(
-		owner,
+		graphics,
 		field_width,
 		field_height,
 		m_cell_side_length

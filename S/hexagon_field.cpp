@@ -1,7 +1,7 @@
 #include "hexagon_field.h"
 #include "graphics.h"
 
-void hexagon_field::initialize(graphics* const owner)
+void hexagon_field::initialize(graphics* const graphics)
 {
 	for (int i = 0; i < field_width; i++)
 	{
@@ -12,13 +12,13 @@ void hexagon_field::initialize(graphics* const owner)
 			float const position_y = 2 * m_cell_radii *j - 0.866025f * m_cell_radii * (field_height - 1 ) - m_cell_radii*0.5f*j;
 			int const index = i + j * field_width;
 			m_grid_cells[index].initialize(
-				owner,
+				graphics,
 				this,
 				{ position_x, position_y },
 				m_cell_radii
 			);
 			m_grid_frames[index].initialize(
-				owner,
+				graphics,
 				{ position_x, position_y },
 				m_cell_radii
 			);

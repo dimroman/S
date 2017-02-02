@@ -4,7 +4,7 @@
 extern unsigned g_index;
 
 void square_grid::initialize(
-	graphics* const owner,
+	graphics* const graphics,
 	unsigned const width,
 	unsigned const height,
 	float const cell_side_length
@@ -34,11 +34,11 @@ void square_grid::initialize(
 	object_constants.width = cell_side_length;
 	object_constants.height = cell_side_length;
 
-	super::initialize(
-		owner,
-		owner->pipeline_state(pipeline_states::line_one),
-		owner->root_signature(root_signatures::one),
-		owner->vertex_buffer_view(vertices, vertices_size, sizeof(math::float2), g_index++),
+	m_render_object = graphics->new_render_object(
+		this,
+		graphics->pipeline_state(pipeline_states::line_one),
+		graphics->root_signature(root_signatures::one),
+		graphics->vertex_buffer_view(vertices, vertices_size, sizeof(math::float2), g_index++),
 		nullptr, 
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
 		object_constants

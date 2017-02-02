@@ -1,14 +1,16 @@
 #ifndef LOGIC_OBJECT_H_INCLUDED
 #define LOGIC_OBJECT_H_INCLUDED
 
-#include "render_object.h"
+#include "render_object_owner.h"
+#include "global_defines.h"
+#include <assert.h>
 
 class graphics;
 class logic_world;
 
-class logic_object : public render_object
+class logic_object : public render_object_owner
 {
-	using super = render_object;
+	using super = render_object_owner;
 public:
 	virtual bool update(per_object_constants& object_constants) override;
 

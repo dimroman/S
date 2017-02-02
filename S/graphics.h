@@ -32,7 +32,15 @@ public:
 
 			void						select_object			(int const x, int const y);
 			void						highlight_object		(int const x, int const y);
-			unsigned					add_render_object		(render_object* const object);
+			render_object*				new_render_object(
+											render_object_owner* const owner,
+											ID3D12PipelineState* const pipeline_state,
+											ID3D12RootSignature* const root_signature,
+											D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
+											D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
+											D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
+											per_object_constants const& object_constants
+										);
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
 
 			ID3D12PipelineState*		pipeline_state			(unsigned const id);
@@ -66,11 +74,11 @@ private:
 	ComPtr<ID3D12CommandAllocator>		m_direct_command_list_allocators[frames_count];
 	ComPtr<ID3D12GraphicsCommandList>	m_command_lists[frames_count];
 
-	render_object*						m_render_objects[render_objects_count];
+	render_object						m_render_objects[render_objects_count];
 	unsigned							m_render_objects_count = 0;
 
-	render_object*						m_selected_render_object = nullptr;
-	render_object*						m_highlighted_render_object = nullptr;
+	unsigned							m_selected_render_object_id = 0;
+	unsigned							m_highlighted_render_object_id = 0;
 		
 	D3D12_VIEWPORT	m_screen_viewport;
 	D3D12_RECT		m_scissor_rectangle;

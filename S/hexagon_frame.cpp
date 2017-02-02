@@ -5,7 +5,7 @@
 extern unsigned g_index;
 
 void hexagon_frame::initialize(
-	graphics* const owner,
+	graphics* const graphics,
 	math::float2 const position,
 	float const radii
 )
@@ -37,12 +37,12 @@ void hexagon_frame::initialize(
 	object_constants.width = radii;
 	object_constants.height = radii;
 
-	super::initialize(
-		owner,
-		owner->pipeline_state(pipeline_states::line_one),
-		owner->root_signature(root_signatures::one),
-		owner->vertex_buffer_view(vertices, sizeof(vertices), sizeof(math::float2), index),
-		owner->index_buffer_view(indices, sizeof(indices), DXGI_FORMAT_R32_UINT, index),
+	m_render_object = graphics->new_render_object(
+		this,
+		graphics->pipeline_state(pipeline_states::line_one),
+		graphics->root_signature(root_signatures::one),
+		graphics->vertex_buffer_view(vertices, sizeof(vertices), sizeof(math::float2), index),
+		graphics->index_buffer_view(indices, sizeof(indices), DXGI_FORMAT_R32_UINT, index),
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
 		object_constants
 	);
