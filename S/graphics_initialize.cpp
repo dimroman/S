@@ -73,9 +73,12 @@ void graphics::initialize_constant_buffers()
 	s_upload_buffer_resource->Map(0, &read_range, &data);
 	s_upload_buffer_data_current = s_upload_buffer_data_begin = static_cast<char*>(data);
 	s_upload_buffer_data_end = s_upload_buffer_data_begin + upload_buffer_size;
-	
-	for (auto& data : m_per_frame_constants)
-		data = create_constant_buffer_view(sizeof(per_frame_constants));
+
+	for (unsigned i = 0; i < frames_count; ++i)
+	{
+		m_per_frame_model_view_projections[i] = create_constant_buffer_view(sizeof(model_view_projection_constants));
+		m_per_frame_colors[i] = create_constant_buffer_view(sizeof(model_view_projection_constants));
+	}
 }
 
 ID3D12PipelineState*		graphics::pipeline_state(unsigned const id)
@@ -117,7 +120,7 @@ ID3D12PipelineState*		graphics::pipeline_state(unsigned const id)
 	pso_desc.SampleMask = UINT_MAX;
 	pso_desc.NumRenderTargets = 2;
 	pso_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	pso_desc.RTVFormats[1] = DXGI_FORMAT_R32_UINT;
+	pso_desc.RTVFormats[1] = indices_render_target_format;
 	pso_desc.SampleDesc.Count = 1;
 	
 	switch (id)
@@ -158,7 +161,7 @@ ID3D12RootSignature*		graphics::root_signature(unsigned const id)
 	case root_signatures::one:
 	{
 		D3D12_DESCRIPTOR_RANGE1 ranges[] = { // Perfomance TIP: Order from most frequent to least frequent.
-			{ D3D12_DESCRIPTOR_RANGE_TYPE_CBV,		1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC,						D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
+			{ D3D12_DESCRIPTOR_RANGE_TYPE_CBV,		2, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC,						D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
 		};
 
 		CD3DX12_ROOT_PARAMETER1 root_parameters[2];
@@ -230,7 +233,7 @@ D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, 
 
 bool graphics::initialize(HWND main_window_handle)
 {
-	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_per_frame_constants));
+	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_per_frame_model_view_projections) + _countof(m_per_frame_colors));
 
 	for (auto& t : m_swap_chain_buffers)
 		t.preinitialize(this, false, false, true);
@@ -301,11 +304,11 @@ bool graphics::initialize(HWND main_window_handle)
 	for (unsigned i = 0; i < frames_count; i++)
 	{
 		D3D12_CLEAR_VALUE clear_value;
-		clear_value.Format = DXGI_FORMAT_R32_UINT;
+		clear_value.Format = indices_render_target_format;
 		std::fill(std::begin(clear_value.Color), std::end(clear_value.Color), 0.0f);
 
-		m_indices_render_targets[i].initialize(m_d3d_device.Get(), 0, g_options.screen_width, g_options.screen_height, 1, DXGI_FORMAT_R32_UINT, { 1, 0 }, D3D12_TEXTURE_LAYOUT_UNKNOWN, &clear_value, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, L"render_target", i);
-		m_indices_render_targets[i].initialize_rtv(m_d3d_device.Get(), DXGI_FORMAT_R32_UINT);
+		m_indices_render_targets[i].initialize(m_d3d_device.Get(), 0, g_options.screen_width, g_options.screen_height, 1, indices_render_target_format, { 1, 0 }, D3D12_TEXTURE_LAYOUT_UNKNOWN, &clear_value, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, L"render_target", i);
+		m_indices_render_targets[i].initialize_rtv(m_d3d_device.Get(), indices_render_target_format);
 		m_indices_render_targets[i].initialize_readback_resource(m_d3d_device.Get());
 	}
 		

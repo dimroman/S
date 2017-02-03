@@ -3,16 +3,12 @@ cbuffer object_id : register(b0)
 	uint id;
 };
 
-struct per_object_constants
+cbuffer static_constants : register(b1)
 {
-	float4 color;
-	float2 position;
-	float width;
-	float height;
-};
+	float4x4 model_view_projections[RENDER_OBJECTS_COUNT];
+}
 
-cbuffer per_frame_constants : register(b1)
+cbuffer per_frame_constants : register(b2)
 {
-	float4x4 model_view_projection;
-	per_object_constants object_constants[RENDER_OBJECTS_COUNT];
+	float4 colors[RENDER_OBJECTS_COUNT];
 };

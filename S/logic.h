@@ -5,11 +5,12 @@
 #include "hexagon_field.h"
 
 class graphics;
+class world_camera;
 
 class logic
 {
 public:
-	void initialize(graphics& graphics);
+	void initialize(graphics& graphics, world_camera& camera);
 	void update();
 	void finalize();
 private:

@@ -12,8 +12,6 @@ class logic_object : public render_object_owner
 {
 	using super = render_object_owner;
 public:
-	virtual bool update(per_object_constants& object_constants) override;
-
 	virtual void set_selected(bool const value) override;
 	virtual void set_highlighted(bool const value) override;
 
@@ -22,7 +20,7 @@ public:
 
 	inline void add_neighbour(logic_object& neighbour) { m_neighbours[m_neighbours_count++] = &neighbour; assert(m_neighbours_count <= max_neighbours_count); }
 
-	void update_selection();
+	virtual bool update_selection();
 	
 protected:
 	unsigned selection_mask() const;
@@ -55,8 +53,6 @@ private:
 	unsigned m_neighbours_count = 0;
 
 	logic_world* m_owner = nullptr;
-
-	unsigned m_need_to_be_updated = 0;
 };
 
 #endif // #ifndef LOGIC_OBJECT_H_INCLUDED

@@ -6,7 +6,8 @@ extern unsigned g_index;
 void hexagon::initialize(
 	graphics* const graphics,
 	logic_world* const owner,
-	math::float2 const position,
+	math::float4x4 const& view_projection,
+	math::float2 const& position,
 	float const radii
 )
 {
@@ -31,12 +32,12 @@ void hexagon::initialize(
 		0, 1, 6
 	};
 
-	per_object_constants object_constants;
-
-	object_constants.color = { 0.9f, 0.8f, 0.7f, 1.0f };
-	object_constants.position = m_position;
-	object_constants.width = m_radii;
-	object_constants.height = m_radii;
+	math::float4 const color = { 0.9f, 0.8f, 0.7f, 1.0f };
+	math::float4x4 model_transform = math::float4x4::identity();
+	model_transform.m[0][0] = radii;
+	model_transform.m[1][1] = radii;
+	model_transform.m[0][3] = position.x;
+	model_transform.m[1][3] = position.y;
 
 	super::initialize(
 		owner,
@@ -47,30 +48,27 @@ void hexagon::initialize(
 			graphics->vertex_buffer_view(vertices, sizeof(vertices), sizeof(math::float2), index),
 			graphics->index_buffer_view(indices, sizeof(indices), DXGI_FORMAT_R32_UINT, index),
 			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-			object_constants
+			model_transform,
+			view_projection,
+			color
 		)
 	);
-
-	m_position = position;
-	m_radii = radii;
 }
 
-bool hexagon::update(per_object_constants& object_constants)
+bool hexagon::update_selection()
 {
-	if (!super::update(object_constants))
+	if (!super::update_selection())
 		return false;
 
 	unsigned const selection_mask = super::selection_mask();
-
-	object_constants.color = { 0.9f, 0.8f, 0.7f, 1.0f };
+	
+	math::float4 color = { 0.9f, 0.8f, 0.7f, 1.0f };
 	if (selection_mask & object_is_selected)
-		object_constants.color += { 0.1f, 0.2f, 0.3f, 0.0f };
+		color += { 0.1f, 0.2f, 0.3f, 0.0f };
 	if (selection_mask & object_is_highlighted)
-		object_constants.color -= { 0.5f, 0.5f, 0.5f, 0.0f };
+		color -= { 0.5f, 0.5f, 0.5f, 0.0f };
 
-	object_constants.position = m_position;
-	object_constants.width = m_radii;
-	object_constants.height = m_radii;
+	m_render_object->update_color(color);
 
 	return true;
 }

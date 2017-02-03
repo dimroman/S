@@ -5,6 +5,7 @@ extern unsigned g_index;
 
 void square_grid::initialize(
 	graphics* const graphics,
+	math::float4x4 const& view_projection,
 	unsigned const width,
 	unsigned const height,
 	float const cell_side_length
@@ -27,12 +28,11 @@ void square_grid::initialize(
 	}
 	assert(index == vertices_count);
 
-	per_object_constants object_constants;
+	math::float4x4 model_transform = math::float4x4::identity();
+	model_transform.m[0][0] = cell_side_length;
+	model_transform.m[1][1] = cell_side_length;
 
-	object_constants.color = math::float4(0.1f, 0.2f, 0.3f, 1.0f);
-	object_constants.position = { 0.0f, 0.0f };
-	object_constants.width = cell_side_length;
-	object_constants.height = cell_side_length;
+	math::float4 const color = math::float4(0.1f, 0.2f, 0.3f, 1.0f);
 
 	m_render_object = graphics->new_render_object(
 		this,
@@ -41,6 +41,8 @@ void square_grid::initialize(
 		graphics->vertex_buffer_view(vertices, vertices_size, sizeof(math::float2), g_index++),
 		nullptr, 
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
-		object_constants
+		model_transform,
+		view_projection,
+		color
 	);
 }

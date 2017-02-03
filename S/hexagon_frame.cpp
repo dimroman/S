@@ -6,7 +6,8 @@ extern unsigned g_index;
 
 void hexagon_frame::initialize(
 	graphics* const graphics,
-	math::float2 const position,
+	math::float4x4 const& view_projection,
+	math::float2 const& position,
 	float const radii
 )
 {
@@ -30,12 +31,12 @@ void hexagon_frame::initialize(
 		5, 0
 	};
 
-	per_object_constants object_constants;
-
-	object_constants.color = { 0.1f, 0.2f, 0.3f, 1.0f };
-	object_constants.position = position;
-	object_constants.width = radii;
-	object_constants.height = radii;
+	math::float4 const color = { 0.1f, 0.2f, 0.3f, 1.0f };
+	math::float4x4 model_transform = math::float4x4::identity();
+	model_transform.m[0][0] = radii;
+	model_transform.m[0][0] = radii;
+	model_transform.m[0][3] = position.x;
+	model_transform.m[1][3] = position.y;
 
 	m_render_object = graphics->new_render_object(
 		this,
@@ -44,6 +45,8 @@ void hexagon_frame::initialize(
 		graphics->vertex_buffer_view(vertices, sizeof(vertices), sizeof(math::float2), index),
 		graphics->index_buffer_view(indices, sizeof(indices), DXGI_FORMAT_R32_UINT, index),
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
-		object_constants
+		model_transform,
+		view_projection,
+		color
 	);
 }

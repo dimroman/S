@@ -16,13 +16,13 @@ public:
 	void initialize(
 		graphics* const graphics,
 		logic_world* const owner,
-		math::float2 const position,
+		math::float4x4 const& view_projection,
+		math::float2 const& position,
 		float const radii
 	);
-	virtual bool update(per_object_constants& object_constants) override;
+
+	virtual bool update_selection() override;
 private:
-	math::float2 m_position;
-	float m_radii;
 };
 
 #endif // #ifndef HEXAGON_H_INCLUDED

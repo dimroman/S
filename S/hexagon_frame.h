@@ -12,10 +12,10 @@ class hexagon_frame : public render_object_owner
 public:
 	void initialize(
 		graphics* const graphics,
-		math::float2 const position,
+		math::float4x4 const& view_projection,
+		math::float2 const& position,
 		float const radii
 	);
-	virtual bool update(per_object_constants& object_constants) override { return false; }
 private:
 };
 

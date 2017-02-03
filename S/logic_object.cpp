@@ -11,8 +11,6 @@ void logic_object::initialize(
 	m_render_object = render_object;
 	m_owner = owner;
 	m_owner->add_logic_object(this);
-
-	m_need_to_be_updated = frames_count;
 }
 
 void logic_object::set_selected(bool const value)
@@ -36,7 +34,7 @@ unsigned logic_object::selection_mask() const
 	return m_selection_mask[g_current_frame_index];
 }
 
-void logic_object::update_selection()
+bool logic_object::update_selection()
 {
 	unsigned current_selection_mask = object_in_default_state;
 
@@ -58,10 +56,5 @@ void logic_object::update_selection()
 	for (auto& mask : m_selection_mask)
 		mask = current_selection_mask;
 
-	m_need_to_be_updated = frames_count;
-}
-
-bool logic_object::update(per_object_constants& object_constants)
-{
-	return m_need_to_be_updated && m_need_to_be_updated--;
+	return true;
 }

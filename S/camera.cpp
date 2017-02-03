@@ -15,9 +15,9 @@ math::float4x4 world_camera::look_at_right_handed()
 	}
 
 	math::float4x4 orientation{
-		math::float4{ m_axis_x.x, m_axis_y.x, m_axis_z.x, 0.0f },
-		math::float4{ m_axis_x.y, m_axis_y.y, m_axis_z.y, 0.0f },
-		math::float4{ m_axis_x.z, m_axis_y.z, m_axis_z.z, 0.0f },
+		math::float4{ m_axis_x.x, m_axis_x.y, m_axis_x.z, 0.0f },
+		math::float4{ m_axis_y.x, m_axis_y.y, m_axis_y.z, 0.0f },
+		math::float4{ m_axis_z.x, m_axis_z.y, m_axis_z.z, 0.0f },
 		math::float4{ 0.0f, 0.0f, 0.0f, 1.0f }
 	};
 
@@ -28,7 +28,10 @@ math::float4x4 world_camera::look_at_right_handed()
 		math::float4{ -m_position.x, -m_position.y, -m_position.z, 1.0f }
 	};
 
-	return orientation*translation;
+	math::float4x4 result;
+	math::multiply(orientation, translation, result);
+
+	return result;
 }
 
 math::float4x4 world_camera::perspective_projection_right_handed() const
@@ -38,8 +41,8 @@ math::float4x4 world_camera::perspective_projection_right_handed() const
 	result.m[1][1] = 1 / (float)tan(0.5f * math::to_radians( g_options.field_of_view ));
 	result.m[0][0] = result.m[1][1] / g_options.aspect_ratio();
 	result.m[2][2] = -g_options.far_plane / (g_options.far_plane - g_options.near_plane);
-	result.m[2][3] = -g_options.far_plane * g_options.near_plane / (g_options.far_plane - g_options.near_plane);
-	result.m[3][2] = -1.0f;
+	result.m[3][2] = -g_options.far_plane * g_options.near_plane / (g_options.far_plane - g_options.near_plane);
+	result.m[2][3] = -1.0f;
 
 	return result;
 }

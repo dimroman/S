@@ -20,31 +20,41 @@ void graphics::finalize()
 	CloseHandle(m_fence_event);
 }
 
-void graphics::update_render_object(per_object_constants const& object_constants, unsigned const id, unsigned const current_frame_index)
+void graphics::update_render_object_model_view_projection(math::float4x4 const& model_view_projection, unsigned const id, unsigned const current_frame_index)
 {
-	m_per_frame_constants[current_frame_index].update(
-		sizeof(math::float4x4) + id * sizeof(per_object_constants),
-		&object_constants,
-		sizeof(object_constants)
+	m_per_frame_model_view_projections[current_frame_index].update(
+		id * sizeof(math::float4x4),
+		&model_view_projection,
+		sizeof(math::float4x4)
 	);
 }
+
+void graphics::update_render_object_color(math::float4 const& color, unsigned const id, unsigned const current_frame_index)
+{
+	m_per_frame_colors[current_frame_index].update(
+		id * sizeof(math::float4),
+		&color,
+		sizeof(math::float4)
+	);
+}
+
 void graphics::update(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed)
 {
-	auto const model = math::float4x4::identity();
-	auto const view = look_at_right_handed;
-	auto const projection = perspective_projection_right_handed;
-	math::float4x4 model_view_projection = math::transpose(model*(view*projection));
-
-	m_per_frame_constants[g_current_frame_index].update(0, &model_view_projection, sizeof(model_view_projection));
-
-	per_object_constants object_constants;
+	math::float4x4 view_projection;
+	math::multiply(perspective_projection_right_handed, look_at_right_handed, view_projection);
+	
+	math::float4x4 model;
+	math::float4x4 model_view_projection;
+	math::float4 color;
 
 	for (unsigned i = 0; i < m_render_objects_count; ++i)
 	{
-		if (!m_render_objects[i].update(object_constants))
-			continue;
+		m_render_objects[i].need_to_update_model(model);		
+		math::multiply(model, view_projection, model_view_projection);
+		update_render_object_model_view_projection(model_view_projection, i, g_current_frame_index);		
 
-		update_render_object(object_constants, i, g_current_frame_index);
+		if (m_render_objects[i].need_to_update_color(color))
+			update_render_object_color(color, i, g_current_frame_index);
 	}
 
 }
@@ -87,7 +97,7 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view = nullptr;
 
 	command_list->SetGraphicsRootSignature(m_render_objects[0].root_signature());
-	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_constants[g_current_frame_index].gpu_handle);
+	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_model_view_projections[g_current_frame_index].gpu_handle);
 	
 	for (unsigned i = 0; i < m_render_objects_count; ++i )
 	{
@@ -181,14 +191,22 @@ render_object* graphics::new_render_object(
 	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
 	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-	per_object_constants const& object_constants
+	math::float4x4 const& model_transform,
+	math::float4x4 const& view_projection_transform,
+	math::float4 const& color
 )
 {
-	m_render_objects[m_render_objects_count].initialize(owner, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology);
+	m_render_objects[m_render_objects_count].initialize(owner, pipeline_state, root_signature, vertex_buffer_view, index_buffer_view, primitive_topology, model_transform, color);
 	render_object* const result = &m_render_objects[m_render_objects_count];
 
+	math::float4x4 model_view_projection;
+	math::multiply(model_transform, view_projection_transform, model_view_projection);
+
 	for (unsigned i = 0; i < frames_count; ++i)
-		update_render_object(object_constants, m_render_objects_count, i);
+	{
+		update_render_object_model_view_projection(model_view_projection, m_render_objects_count, i);
+		update_render_object_color(color, m_render_objects_count, i);
+	}
 
 	m_render_objects_count++;
 	assert(m_render_objects_count < render_objects_count);

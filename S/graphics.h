@@ -38,7 +38,9 @@ public:
 											D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
 											D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
 											D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-											per_object_constants const& object_constants
+											math::float4x4 const& model_transform, 
+											math::float4x4 const& view_projection_transform,
+											math::float4 const& color
 										);
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
 
@@ -47,7 +49,8 @@ public:
 			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view		(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size, unsigned const index);
 			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view		(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format, unsigned const index);
 
-			void						update_render_object(per_object_constants const& object_constants, unsigned const id, unsigned const current_frame_index);
+			void						update_render_object_model_view_projection(math::float4x4 const& model_view_projection, unsigned const id, unsigned const current_frame_index);
+			void						update_render_object_color(math::float4 const& color, unsigned const id, unsigned const current_frame_index);
 			
 private:
 			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
@@ -99,7 +102,10 @@ private:
 private:
 
 private:
-	constant_buffer_data m_per_frame_constants[frames_count];
+	constant_buffer_data m_per_frame_model_view_projections[frames_count];
+	constant_buffer_data m_per_frame_colors[frames_count];
+
+	DXGI_FORMAT const indices_render_target_format = DXGI_FORMAT_R32_UINT;
 
 }; // class graphics
 

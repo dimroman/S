@@ -11,7 +11,7 @@ class hexagon_field : public logic_world
 {
 	using super = logic_world;
 public:
-	void initialize(graphics* const graphics);
+	void initialize(graphics* const graphics, math::float4x4 const& view_projection);
 	virtual void update() override;
 private:
 	enum {

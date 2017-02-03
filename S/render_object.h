@@ -3,12 +3,13 @@
 
 #include <d3d12.h>
 #include "math.h"
+#include "global_defines.h"
 
 class render_object_owner;
 
 enum
 {
-	render_objects_count = 1024 + 512,
+	render_objects_count = 1024,
 	max_vertex_buffer_views_count = 2048,
 	max_index_buffer_views_count = 2048,
 };
@@ -33,18 +34,14 @@ namespace pipeline_states {
 	};
 }
 
-struct per_object_constants
+struct color_constants
 {
-	math::float4 color;
-	math::float2 position;
-	float width;
-	float height;
+	math::float4 colors[render_objects_count];
 };
 
-struct per_frame_constants
+struct model_view_projection_constants
 {
-	math::float4x4 model_view_projection;
-	per_object_constants object_constants[render_objects_count];
+	math::float4x4 model_view_projections[render_objects_count];
 };
 
 class constant_buffer_data
@@ -73,10 +70,15 @@ public:
 		ID3D12RootSignature* const root_signature, 
 		D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view, 
 		D3D12_INDEX_BUFFER_VIEW const* index_buffer_view, 
-		D3D_PRIMITIVE_TOPOLOGY const primitive_topology
+		D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
+		math::float4x4 const& model_transform,
+		math::float4 const& color
 	);
 
-	bool update(per_object_constants& object_constants);
+	bool need_to_update_model(math::float4x4& model_transform);
+	bool need_to_update_color(math::float4& color);
+	void update_model(math::float4x4& model_transform);
+	void update_color(math::float4& color);
 	void set_selected(bool const value);
 	void set_highlighted(bool const value);
 
@@ -96,6 +98,11 @@ private:
 	D3D12_INDEX_BUFFER_VIEW const* m_index_buffer_view;	
 
 	render_object_owner* m_owner = nullptr;
+
+	math::float4x4	m_model_transform;
+	math::float4	m_color;
+	unsigned char mutable m_model_transform_was_updated = frames_count;
+	unsigned char mutable m_color_was_updated = frames_count;
 };
 
 #endif // #ifndef RENDER_OBJECT_H_INCLUDED

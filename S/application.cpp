@@ -123,8 +123,8 @@ int application::run()
 	if (!m_graphics.initialize(m_main_window_handle))
 		return 0;
 
-	m_logic.initialize(m_graphics);
 	m_camera.set_look_position({ 0.0f, 0.0f, 0.0f });
+	m_logic.initialize(m_graphics, m_camera);
 	g_input.initialize(this);
 	
 	MSG msg = { 0 };
@@ -142,18 +142,18 @@ int application::run()
 			float const last_frame_time = static_cast<float>(g_timer.GetElapsedSeconds());
 			float const frameChange = 2.0f * last_frame_time;
 
-			if (g_input.leftArrowPressed)
-				m_camera.move_x(-frameChange);
-			if (g_input.rightArrowPressed)
-				m_camera.move_x(frameChange);
+			//if (g_input.leftArrowPressed)
+			//	m_camera.move_x(-frameChange);
+			//if (g_input.rightArrowPressed)
+			//	m_camera.move_x(frameChange);
 			if (g_input.forward_arrow_pressed)
 				m_camera.move_z(-frameChange);
 			if (g_input.backward_arrow_pressed)
 				m_camera.move_z(frameChange);
-			if (g_input.last_dx != 0.0f)
-				m_camera.rotate_around_up(-g_input.last_dx);
-			if (g_input.last_dy != 0.0f)
-				m_camera.rotate_around_x(g_input.last_dy);
+			//if (g_input.last_dx != 0.0f)
+			//	m_camera.rotate_around_up(-g_input.last_dx);
+			//if (g_input.last_dy != 0.0f)
+			//	m_camera.rotate_around_x(g_input.last_dy);
 
 			m_logic.update();
 			m_graphics.run(last_frame_time, m_camera.look_at_right_handed(), m_camera.perspective_projection_right_handed());

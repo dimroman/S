@@ -1,7 +1,7 @@
 #include "square_field.h"
 #include "graphics.h"
 
-void square_field::initialize( graphics* const graphics)
+void square_field::initialize( graphics* const graphics, math::float4x4 const& view_projection)
 {
 	for (int i = 0; i < field_width; i++)
 	{
@@ -13,6 +13,7 @@ void square_field::initialize( graphics* const graphics)
 			m_grid_cells[index].initialize(
 				graphics,
 				this,
+				view_projection,
 				{ position_x, position_y },
 				m_cell_side_length,
 				m_cell_side_length
@@ -22,6 +23,7 @@ void square_field::initialize( graphics* const graphics)
 	
 	m_square_grid.initialize(
 		graphics,
+		view_projection,
 		field_width,
 		field_height,
 		m_cell_side_length

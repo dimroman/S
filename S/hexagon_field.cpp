@@ -1,7 +1,7 @@
 #include "hexagon_field.h"
 #include "graphics.h"
 
-void hexagon_field::initialize(graphics* const graphics)
+void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& view_projection)
 {
 	for (int i = 0; i < field_width; i++)
 	{
@@ -14,11 +14,13 @@ void hexagon_field::initialize(graphics* const graphics)
 			m_grid_cells[index].initialize(
 				graphics,
 				this,
+				view_projection,
 				{ position_x, position_y },
 				m_cell_radii
 			);
 			m_grid_frames[index].initialize(
 				graphics,
+				view_projection,
 				{ position_x, position_y },
 				m_cell_radii
 			);
