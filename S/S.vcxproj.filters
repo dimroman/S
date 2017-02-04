@@ -4,9 +4,6 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="square_grid.cpp">
-      <Filter>logic\logic_object\square_grid</Filter>
-    </ClCompile>
     <ClCompile Include="application.cpp">
       <Filter>application</Filter>
     </ClCompile>
@@ -19,23 +16,14 @@
     <ClCompile Include="render_object.cpp">
       <Filter>graphics\render_object</Filter>
     </ClCompile>
-    <ClCompile Include="rectangle.cpp">
-      <Filter>logic\logic_object\rectangle</Filter>
-    </ClCompile>
     <ClCompile Include="math.cpp">
       <Filter>math</Filter>
     </ClCompile>
     <ClCompile Include="square_field.cpp">
       <Filter>logic\logic_world\square_field</Filter>
     </ClCompile>
-    <ClCompile Include="hexagon.cpp">
-      <Filter>logic\logic_object\hexagon</Filter>
-    </ClCompile>
     <ClCompile Include="hexagon_field.cpp">
       <Filter>logic\logic_world\hexagonal_field</Filter>
-    </ClCompile>
-    <ClCompile Include="hexagon_frame.cpp">
-      <Filter>logic\logic_object\hexagon_frame</Filter>
     </ClCompile>
     <ClCompile Include="texture.cpp">
       <Filter>graphics</Filter>
@@ -55,6 +43,12 @@
     <ClCompile Include="logic.cpp">
       <Filter>logic</Filter>
     </ClCompile>
+    <ClCompile Include="render_object_instance.cpp">
+      <Filter>graphics\render_object</Filter>
+    </ClCompile>
+    <ClCompile Include="logic_object_instance.cpp">
+      <Filter>logic\logic_object</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
@@ -62,9 +56,6 @@
     <ClInclude Include="input.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="StepTimer.h" />
-    <ClInclude Include="square_grid.h">
-      <Filter>logic\logic_object\square_grid</Filter>
-    </ClInclude>
     <ClInclude Include="application.h">
       <Filter>application</Filter>
     </ClInclude>
@@ -74,23 +65,14 @@
     <ClInclude Include="render_object.h">
       <Filter>graphics\render_object</Filter>
     </ClInclude>
-    <ClInclude Include="rectangle.h">
-      <Filter>logic\logic_object\rectangle</Filter>
-    </ClInclude>
     <ClInclude Include="math.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="square_field.h">
       <Filter>logic\logic_world\square_field</Filter>
     </ClInclude>
-    <ClInclude Include="hexagon.h">
-      <Filter>logic\logic_object\hexagon</Filter>
-    </ClInclude>
     <ClInclude Include="hexagon_field.h">
       <Filter>logic\logic_world\hexagonal_field</Filter>
-    </ClInclude>
-    <ClInclude Include="hexagon_frame.h">
-      <Filter>logic\logic_object\hexagon_frame</Filter>
     </ClInclude>
     <ClInclude Include="texture.h">
       <Filter>graphics</Filter>
@@ -113,6 +95,12 @@
     <ClInclude Include="global_defines.h" />
     <ClInclude Include="logic.h">
       <Filter>logic</Filter>
+    </ClInclude>
+    <ClInclude Include="render_object_instance.h">
+      <Filter>graphics\render_object</Filter>
+    </ClInclude>
+    <ClInclude Include="logic_object_instance.h">
+      <Filter>logic\logic_object</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -155,28 +143,22 @@
     <Filter Include="logic\logic_world\square_field">
       <UniqueIdentifier>{ef1de08a-62bc-4b90-8962-a0c6eae7b09c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="logic\logic_object\hexagon">
-      <UniqueIdentifier>{4eaf7cae-f235-4c38-8200-ad9faca3d424}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="logic\logic_object\hexagon_frame">
-      <UniqueIdentifier>{2e8fec52-27a5-49a4-bfef-1d35bf072d5f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="logic\logic_object\rectangle">
-      <UniqueIdentifier>{cd0171c6-c0b7-4895-b8a2-a6e688e4e52a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="logic\logic_object\square_grid">
-      <UniqueIdentifier>{4c3a8679-24e6-4849-b259-ad972b3e8f67}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color_id.hlsl">
       <Filter>graphics\shaders\pixel</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\xy_position_x_model_view_projection.hlsl">
-      <Filter>graphics\shaders\vertex</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\common.hlsl">
       <Filter>graphics\shaders\common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\vertex_position_x_mvp.hlsl">
+      <Filter>graphics\shaders\vertex</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\vertex_instance_position_x_mvp.hlsl">
+      <Filter>graphics\shaders\vertex</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\instance_color_id.hlsl">
+      <Filter>graphics\shaders\pixel</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

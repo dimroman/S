@@ -152,21 +152,19 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="graphics_initialize.cpp" />
-    <ClCompile Include="hexagon.cpp" />
     <ClCompile Include="hexagon_field.cpp" />
-    <ClCompile Include="hexagon_frame.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="logic.cpp" />
     <ClCompile Include="logic_object.cpp" />
+    <ClCompile Include="logic_object_instance.cpp" />
     <ClCompile Include="logic_world.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="render_object.cpp" />
+    <ClCompile Include="render_object_instance.cpp" />
     <ClCompile Include="render_object_owner.cpp" />
     <ClCompile Include="sampler.cpp" />
-    <ClCompile Include="rectangle.cpp" />
     <ClCompile Include="square_field.cpp" />
-    <ClCompile Include="square_grid.cpp" />
     <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -176,21 +174,19 @@
     <ClInclude Include="global_defines.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="helper_functions.h" />
-    <ClInclude Include="hexagon.h" />
     <ClInclude Include="hexagon_field.h" />
-    <ClInclude Include="hexagon_frame.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="logic.h" />
     <ClInclude Include="logic_object.h" />
+    <ClInclude Include="logic_object_instance.h" />
     <ClInclude Include="logic_world.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="render_object.h" />
+    <ClInclude Include="render_object_instance.h" />
     <ClInclude Include="render_object_owner.h" />
     <ClInclude Include="sampler.h" />
-    <ClInclude Include="rectangle.h" />
     <ClInclude Include="square_field.h" />
-    <ClInclude Include="square_grid.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="texture.h" />
   </ItemGroup>
@@ -213,7 +209,15 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\xy_position_x_model_view_projection.hlsl">
+    <FxCompile Include="Shaders\instance_color_id.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\vertex_instance_position_x_mvp.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\vertex_position_x_mvp.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>

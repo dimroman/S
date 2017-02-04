@@ -2,8 +2,11 @@
 #define SQUARE_FIELD_H_INCLUDED
 
 #include "logic_world.h"
-#include "rectangle.h"
-#include "square_grid.h"
+#include "logic_object.h"
+
+namespace math {
+	struct float4x4;
+}
 
 class graphics;
 
@@ -19,8 +22,8 @@ private:
 		field_width = 31,
 		field_height = 31,
 	};
-	rectangle	m_grid_cells[field_width*field_height];
-	square_grid	m_square_grid;
+	logic_object m_grid;
+	render_object_owner	m_square_grid;
 	float const m_cell_side_length = 1.0f;
 };
 

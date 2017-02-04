@@ -8,51 +8,26 @@
 class graphics;
 class logic_world;
 
+class logic_object_instance;
+
 class logic_object : public render_object_owner
 {
 	using super = render_object_owner;
 public:
-	virtual void set_selected(bool const value) override;
-	virtual void set_highlighted(bool const value) override;
 
-	inline bool is_selected() const { return m_is_selected; }
-	inline bool is_highlighted() const { return m_is_highlighted; }
+	void initialize(logic_world* const owner, render_object* const render_object, logic_object_instance* const instances, unsigned const instances_count);
 
-	inline void add_neighbour(logic_object& neighbour) { m_neighbours[m_neighbours_count++] = &neighbour; assert(m_neighbours_count <= max_neighbours_count); }
+	virtual void set_selected(unsigned const instance_id, bool const value) override;
+	virtual void set_highlighted(unsigned const instance_id, bool const value) override;
 
-	virtual bool update_selection();
-	
-protected:
-	unsigned selection_mask() const;
-
-	void initialize(
-		logic_world* const owner,
-		render_object* const render_object
-	);
-private:
-
+	void update_color(logic_object_instance* const instance, math::float4 const& color);
 
 protected:
-	enum selection_mask_values
-	{
-		object_in_default_state = 1 << 0,
-		object_is_selected = 1 << 1,
-		object_is_highlighted = 1 << 2,
-		neighbour_is_selected = 1 << 3,
-		neighbour_is_highlighted = 1 << 4,
-	};
 
 private:
-	bool m_is_selected = false;
-	bool m_is_highlighted = false;
-
-	unsigned m_selection_mask[frames_count]{ 0 };
-
-	enum { max_neighbours_count = 8, };
-	logic_object* m_neighbours[max_neighbours_count]{ nullptr };
-	unsigned m_neighbours_count = 0;
-
 	logic_world* m_owner = nullptr;
+	logic_object_instance* m_instances = nullptr;
+	unsigned m_instances_count = 0;
 };
 
 #endif // #ifndef LOGIC_OBJECT_H_INCLUDED

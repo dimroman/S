@@ -8,7 +8,7 @@
 #include "sampler.h"
 #include "math.h"
 #include "render_object.h"
-#include <utility>
+#include "render_object_instance.h"
 #include "global_defines.h"
 
 using Microsoft::WRL::ComPtr;
@@ -36,18 +36,26 @@ public:
 											ID3D12PipelineState* const pipeline_state,
 											ID3D12RootSignature* const root_signature,
 											D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
+											D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
 											D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
 											D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-											math::float4x4 const& model_transform, 
 											math::float4x4 const& view_projection_transform,
-											math::float4 const& color
+											math::float4x4 const* const model_transforms,
+											math::float4 const* const colors,
+											unsigned const instances_count
 										);
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
 
-			ID3D12PipelineState*		pipeline_state			(unsigned const id);
-			ID3D12RootSignature*		root_signature			(unsigned const id);
-			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view		(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size, unsigned const index);
-			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view		(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format, unsigned const index);
+			ID3D12PipelineState*		pipeline_state			(
+											ID3D12RootSignature* const root_signature, 
+											D3D12_PRIMITIVE_TOPOLOGY_TYPE const primitive_topology_type,
+											D3D12_INPUT_LAYOUT_DESC const& input_layout_description,
+											wchar_t const* const vertex_shader_name,
+											wchar_t const* const pixel_shader_name
+										);
+			ID3D12RootSignature*		root_signature			();
+			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view		(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
+			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view		(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
 
 			void						update_render_object_model_view_projection(math::float4x4 const& model_view_projection, unsigned const id, unsigned const current_frame_index);
 			void						update_render_object_color(math::float4 const& color, unsigned const id, unsigned const current_frame_index);
@@ -61,6 +69,7 @@ private:
 private:
 
 	ComPtr<ID3D12Device>				m_d3d_device;
+	ComPtr<ID3D12CommandAllocator>		m_bundle_allocator;
 
 	ComPtr<IDXGISwapChain3>				m_swap_chain;
 	texture								m_swap_chain_buffers[frames_count];
@@ -78,9 +87,11 @@ private:
 
 	render_object						m_render_objects[render_objects_count];
 	unsigned							m_render_objects_count = 0;
+	render_object_instance				m_render_object_instances[render_object_instances_count];
+	unsigned							m_render_object_instances_count = 0;
 
-	unsigned							m_selected_render_object_id = 0;
-	unsigned							m_highlighted_render_object_id = 0;
+	unsigned							m_selected_render_object_instance_id = 0;
+	unsigned							m_highlighted_render_object_instance_id = 0;
 		
 	D3D12_VIEWPORT	m_screen_viewport;
 	D3D12_RECT		m_scissor_rectangle;
@@ -93,12 +104,14 @@ private:
 	
 	UINT m_descriptor_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 
-	ComPtr<ID3D12PipelineState> m_pipeline_states[pipeline_states::count];
-	ComPtr<ID3D12RootSignature> m_root_signatures[root_signatures::count];
-	std::pair<D3D12_VERTEX_BUFFER_VIEW, unsigned> m_vertex_buffer_views[max_vertex_buffer_views_count];
-	unsigned m_vertex_buffer_views_count{ 0 };
-	std::pair<D3D12_INDEX_BUFFER_VIEW, unsigned> m_index_buffer_views[max_index_buffer_views_count];
-	unsigned m_index_buffer_views_count{ 0 };	
+	ComPtr<ID3D12PipelineState> m_pipeline_states[max_pipeline_states_count];
+	unsigned m_pipeline_states_count = 0;
+	ComPtr<ID3D12RootSignature> m_root_signatures[max_root_signatures_count];
+	unsigned m_root_signatures_count = 0;
+	D3D12_VERTEX_BUFFER_VIEW m_vertex_buffer_views[max_vertex_buffer_views_count];
+	unsigned m_vertex_buffer_views_count = 0;
+	D3D12_INDEX_BUFFER_VIEW m_index_buffer_views[max_index_buffer_views_count];
+	unsigned m_index_buffer_views_count = 0;
 private:
 
 private:

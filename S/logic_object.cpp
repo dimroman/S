@@ -1,60 +1,34 @@
 #include "logic_object.h"
 #include "logic_world.h"
-
-extern unsigned g_current_frame_index;
+#include "global_defines.h"
+#include "math.h"
+#include "render_object.h"
+#include "logic_object_instance.h"
 
 void logic_object::initialize(
 	logic_world* const owner,
-	render_object* const render_object
+	render_object* const render_object, 
+	logic_object_instance* const instances, 
+	unsigned const instances_count
 )
 {
-	m_render_object = render_object;
+	super::initialize(render_object);
 	m_owner = owner;
-	m_owner->add_logic_object(this);
+	m_instances = instances;
+	m_instances_count = instances_count;
 }
 
-void logic_object::set_selected(bool const value)
+void logic_object::set_selected(unsigned const instance_id, bool const value)
 { 
-	m_is_selected = value; 
-	for (unsigned i = 0; i < m_neighbours_count; ++i)
-		m_neighbours[i]->update_selection();
-	update_selection();
+	m_instances[instance_id].set_selected(value);
 }
 
-void logic_object::set_highlighted(bool const value)
+void logic_object::set_highlighted(unsigned const instance_id, bool const value)
 { 
-	m_is_highlighted = value;
-	for (unsigned i = 0; i < m_neighbours_count; ++i)
-		m_neighbours[i]->update_selection();
-	update_selection();
+	m_instances[instance_id].set_highlighted(value);
 }
 
-unsigned logic_object::selection_mask() const
+void logic_object::update_color(logic_object_instance* const instance, math::float4 const& color)
 {
-	return m_selection_mask[g_current_frame_index];
-}
-
-bool logic_object::update_selection()
-{
-	unsigned current_selection_mask = object_in_default_state;
-
-	if (m_is_selected)
-		current_selection_mask |= object_is_selected;
-
-	if (m_is_highlighted)
-		current_selection_mask |= object_is_highlighted;
-
-	for (unsigned i = 0; i < m_neighbours_count; ++i)
-	{
-		if (m_neighbours[i]->is_selected())
-			current_selection_mask |= neighbour_is_selected;
-
-		if (m_neighbours[i]->is_highlighted())
-			current_selection_mask |= neighbour_is_highlighted;
-	}
-
-	for (auto& mask : m_selection_mask)
-		mask = current_selection_mask;
-
-	return true;
+	super::update_color(color, static_cast<unsigned>(instance - &m_instances[0]));
 }

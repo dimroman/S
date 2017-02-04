@@ -2,8 +2,11 @@
 #define HEXAGON_FIELD_H_INCLUDED
 
 #include "logic_world.h"
-#include "hexagon.h"
-#include "hexagon_frame.h"
+#include "logic_object.h"
+
+namespace math {
+	struct float4x4;
+}
 
 class graphics;
 
@@ -18,8 +21,8 @@ private:
 		field_width = 16,
 		field_height = 16,
 	};
-	hexagon m_grid_cells[field_width*field_height];
-	hexagon_frame m_grid_frames[field_width*field_height];
+	logic_object m_grid_cells[field_width*field_height];
+	render_object_owner m_grid_frames[field_width*field_height];
 
 	float const m_cell_radii = 1.0f;
 };

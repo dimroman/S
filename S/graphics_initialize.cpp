@@ -81,36 +81,31 @@ void graphics::initialize_constant_buffers()
 	}
 }
 
-ID3D12PipelineState*		graphics::pipeline_state(unsigned const id)
+ID3D12PipelineState* graphics::pipeline_state(
+	ID3D12RootSignature* const root_signature,
+	D3D12_PRIMITIVE_TOPOLOGY_TYPE const primitive_topology_type,
+	D3D12_INPUT_LAYOUT_DESC const& input_layout_description,
+	wchar_t const* const vertex_shader_name,
+	wchar_t const* const pixel_shader_name
+)
 {
-	if (m_pipeline_states[id].Get())
-		return m_pipeline_states[id].Get();
-
 	ComPtr<ID3DBlob> vertex_shader;
 	ComPtr<ID3DBlob> pixel_shader;
 	ComPtr<ID3DBlob> errors;
 
-	auto const render_objects_count_string = std::to_string(render_objects_count);
+	auto const render_objects_count_string = std::to_string(render_object_instances_count);
 
 	D3D_SHADER_MACRO const shader_macros[] = {
-		{ "RENDER_OBJECTS_COUNT", render_objects_count_string.c_str() },
+		{ "RENDER_OBJECT_INSTANCES_COUNT", render_objects_count_string.c_str() },
 		{ nullptr, nullptr }
 	};
 
 	UINT const compile_flags = default_compile_flags();
-	ThrowIfFailed(D3DCompileFromFile(L"Shaders//xy_position_x_model_view_projection.hlsl", shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compile_flags, 0, &vertex_shader, &errors), errors);
-	ThrowIfFailed(D3DCompileFromFile(L"Shaders//color_id.hlsl", shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compile_flags, 0, &pixel_shader, &errors), errors);
-
-	D3D12_INPUT_ELEMENT_DESC input_element_description[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	};
-
-	D3D12_INPUT_LAYOUT_DESC input_layout_description{ input_element_description, _countof(input_element_description) };
+	ThrowIfFailed(D3DCompileFromFile(vertex_shader_name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compile_flags, 0, &vertex_shader, &errors), errors);
+	ThrowIfFailed(D3DCompileFromFile(pixel_shader_name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compile_flags, 0, &pixel_shader, &errors), errors);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc{};
-	pso_desc.InputLayout = input_layout_description;
-	pso_desc.pRootSignature = root_signature(root_signatures::one);
+	pso_desc.pRootSignature = root_signature;
 	pso_desc.VS = { vertex_shader->GetBufferPointer(), vertex_shader->GetBufferSize() };
 	pso_desc.PS = { pixel_shader->GetBufferPointer(), pixel_shader->GetBufferSize() };
 	pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -122,32 +117,15 @@ ID3D12PipelineState*		graphics::pipeline_state(unsigned const id)
 	pso_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	pso_desc.RTVFormats[1] = indices_render_target_format;
 	pso_desc.SampleDesc.Count = 1;
-	
-	switch (id)
-	{
-	case pipeline_states::triangle_one:
-	{
-		pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		ThrowIfFailed(m_d3d_device->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&m_pipeline_states[id])));
-		break;
-	}
-	case pipeline_states::line_one:
-	{
-		pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
-		ThrowIfFailed(m_d3d_device->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&m_pipeline_states[id])));
-		break;
-	}
-	default:
-		assert(true);
-	}
+	pso_desc.InputLayout = input_layout_description;
+	pso_desc.PrimitiveTopologyType = primitive_topology_type;
+	ThrowIfFailed(m_d3d_device->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&m_pipeline_states[m_pipeline_states_count])));
+	m_pipeline_states_count++;
 
-	return m_pipeline_states[id].Get();
+	return m_pipeline_states[m_pipeline_states_count-1].Get();
 }
-ID3D12RootSignature*		graphics::root_signature(unsigned const id)
+ID3D12RootSignature*		graphics::root_signature()
 {
-	if (m_root_signatures[id].Get())
-		return m_root_signatures[id].Get();
-
 	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData{ D3D_ROOT_SIGNATURE_VERSION_1_1 };
 	if (static bool first_time = true)
 	{
@@ -156,79 +134,55 @@ ID3D12RootSignature*		graphics::root_signature(unsigned const id)
 		first_time = false;
 	}
 
-	switch (id)
-	{
-	case root_signatures::one:
-	{
-		D3D12_DESCRIPTOR_RANGE1 ranges[] = { // Perfomance TIP: Order from most frequent to least frequent.
-			{ D3D12_DESCRIPTOR_RANGE_TYPE_CBV,		2, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC,						D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
-		};
+	D3D12_DESCRIPTOR_RANGE1 ranges[] = { // Perfomance TIP: Order from most frequent to least frequent.
+		{ D3D12_DESCRIPTOR_RANGE_TYPE_CBV,		2, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC,						D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
+	};
 
-		CD3DX12_ROOT_PARAMETER1 root_parameters[2];
-		root_parameters[0].InitAsConstants(1, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
-		root_parameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
+	CD3DX12_ROOT_PARAMETER1 root_parameters[2];
+	root_parameters[0].InitAsConstants(1, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
+	root_parameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 
-		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
-		root_signature_desc.Init_1_1(_countof(root_parameters), root_parameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
+	root_signature_desc.Init_1_1(_countof(root_parameters), root_parameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-		ComPtr<ID3DBlob> signature;
-		ComPtr<ID3DBlob> error;
-		ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&root_signature_desc, featureData.HighestVersion, &signature, &error), error);
-		ThrowIfFailed(m_d3d_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signatures[id])));
-		break;
-	}
-	default:
-		assert(true);
-	}
+	ComPtr<ID3DBlob> signature;
+	ComPtr<ID3DBlob> error;
+	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&root_signature_desc, featureData.HighestVersion, &signature, &error), error);
+	ThrowIfFailed(m_d3d_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signatures[m_root_signatures_count])));
+	m_root_signatures_count++;
 
-	return m_root_signatures[id].Get();
+	return m_root_signatures[m_root_signatures_count-1].Get();
 }
-D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size, unsigned const index)
+D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size)
 {
-	for (unsigned i = 0; i < m_vertex_buffer_views_count; ++i)
-	{
-		if (index == m_vertex_buffer_views[i].second)
-			return &m_vertex_buffer_views[i].first;
-	}
-
 	memcpy(s_upload_buffer_data_current, vertices, vertices_size);
-	D3D12_VERTEX_BUFFER_VIEW const view = {
+	m_vertex_buffer_views[m_vertex_buffer_views_count++] = {
 		s_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(s_upload_buffer_data_current - s_upload_buffer_data_begin),
 		vertices_size,
 		vertex_size
 	};
-
-	m_vertex_buffer_views[m_vertex_buffer_views_count++] = { view, index };
 	assert(m_vertex_buffer_views_count < max_vertex_buffer_views_count);
 
 	s_upload_buffer_data_current += aligned(vertices_size, 4);
 	assert(s_upload_buffer_data_current < s_upload_buffer_data_end);
 
-	return &m_vertex_buffer_views[m_vertex_buffer_views_count - 1].first;
+	return &m_vertex_buffer_views[m_vertex_buffer_views_count - 1];
 }
 
-D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format, unsigned const index)
+D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format)
 {
-	for (unsigned i = 0; i < m_index_buffer_views_count; ++i)
-	{
-		if (index == m_index_buffer_views[i].second)
-			return &m_index_buffer_views[i].first;
-	}
-
 	memcpy(s_upload_buffer_data_current, indices, indices_size);
-	D3D12_INDEX_BUFFER_VIEW const view{
+	m_index_buffer_views[m_index_buffer_views_count++] = {
 		s_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(s_upload_buffer_data_current - s_upload_buffer_data_begin),
 		indices_size,
 		format
 	};
-
-	m_index_buffer_views[m_index_buffer_views_count++] = { view, index };
 	assert(m_index_buffer_views_count < max_index_buffer_views_count);
 
 	s_upload_buffer_data_current += aligned(indices_size, 4);
 	assert(s_upload_buffer_data_current < s_upload_buffer_data_end);
 
-	return &m_index_buffer_views[m_index_buffer_views_count - 1].first;
+	return &m_index_buffer_views[m_index_buffer_views_count - 1];
 }
 
 bool graphics::initialize(HWND main_window_handle)
@@ -262,6 +216,8 @@ bool graphics::initialize(HWND main_window_handle)
 	
 	for (UINT i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
 		m_descriptor_sizes[i] = m_d3d_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE(i));
+
+	ThrowIfFailed(m_d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE, IID_PPV_ARGS(&m_bundle_allocator)));
 
 	ComPtr<ID3D12CommandAllocator> initialization_command_allocator;
 	ComPtr<ID3D12GraphicsCommandList> initialization_command_list;
@@ -338,4 +294,53 @@ bool graphics::initialize(HWND main_window_handle)
 	}
 
 	return true;
+}
+
+render_object* graphics::new_render_object(
+	render_object_owner* const owner,
+	ID3D12PipelineState* const pipeline_state,
+	ID3D12RootSignature* const root_signature,
+	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
+	D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
+	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
+	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
+	math::float4x4 const& view_projection_transform,
+	math::float4x4 const* const model_transforms,
+	math::float4 const* const colors,
+	unsigned const instances_count
+)
+{
+	m_render_objects[m_render_objects_count].initialize(
+		owner,
+		m_d3d_device.Get(),
+		m_bundle_allocator.Get(),
+		pipeline_state,
+		root_signature,
+		vertex_buffer_view,
+		instance_vertex_buffer_view,
+		index_buffer_view,
+		primitive_topology,
+		&m_render_object_instances[m_render_object_instances_count],
+		instances_count
+	);
+
+	math::float4x4 model_view_projection;
+	for (unsigned i = 0; i < instances_count; ++i)
+	{
+		math::float4x4 const model = model_transforms[i];
+		m_render_object_instances[m_render_object_instances_count].initialize(m_render_objects[m_render_objects_count], model, colors[i]);
+
+		math::multiply(model, view_projection_transform, model_view_projection);
+		for (unsigned j = 0; j < frames_count; ++j)
+		{
+			update_render_object_model_view_projection(model_view_projection, m_render_object_instances_count, j);
+			update_render_object_color(colors[i], m_render_object_instances_count, j);
+		}
+		m_render_object_instances_count++;
+		assert(m_render_object_instances_count < render_object_instances_count);
+	}
+
+	render_object& result = m_render_objects[m_render_objects_count++];
+	assert(m_render_objects_count < render_objects_count);
+	return &result;
 }
