@@ -91,18 +91,6 @@ inline void SetNameIndexed(ID3D12Object*, LPCWSTR, UINT)
 #define NAME_D3D12_OBJECT(x) SetName(x.Get(), L#x)
 #define NAME_D3D12_OBJECT_INDEXED(x, n) SetNameIndexed(x[n].Get(), L#x, n)
 
-static inline UINT default_compile_flags()
-{
-#if defined(_DEBUG)
-	// Enable better shader debugging with the graphics debugging tools.
-	UINT const compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-	UINT const compileFlags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-
-	return compileFlags;
-}
-
 static inline D3D12_CLEAR_VALUE clear_value(DXGI_FORMAT format, D3D12_DEPTH_STENCIL_VALUE depth_stencil)
 {
 	D3D12_CLEAR_VALUE result{};

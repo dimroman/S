@@ -18,6 +18,8 @@ enum
 	max_index_buffer_views_count = 32,
 	max_pipeline_states_count = 32,
 	max_root_signatures_count = 32,
+	max_vertex_shaders_count = 32,
+	max_pixel_shaders_count = 32,
 };
 
 struct color_constants

@@ -28,31 +28,23 @@ void graphics::increment_handles(D3D12_DESCRIPTOR_HEAP_TYPE const type)
 	m_current_cpu_handle[type].ptr += graphics::descriptor_size(type);
 }
 
-enum {
-	upload_buffer_size = 1024 * 1024,
-};
-static ComPtr<ID3D12Resource> s_upload_buffer_resource;
-static char* s_upload_buffer_data_begin		= nullptr;
-static char* s_upload_buffer_data_current	= nullptr;
-static char* s_upload_buffer_data_end		= nullptr;
-
 constant_buffer_data graphics::create_constant_buffer_view(unsigned const buffer_size)
 {
 	auto const aligned_size = aligned(buffer_size, 256);
 	assert(aligned_size <= 65536);
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc{
-		s_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(s_upload_buffer_data_current - s_upload_buffer_data_begin),
+		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),
 		aligned_size
 	};
 	m_d3d_device->CreateConstantBufferView(&cbv_desc, current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	
 	constant_buffer_data result{ 
-		static_cast<void*>(s_upload_buffer_data_current), 
+		static_cast<void*>(m_upload_buffer_data_current), 
 		current_gpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) 
 	};
 
-	s_upload_buffer_data_current += aligned_size;
-	assert(s_upload_buffer_data_current < s_upload_buffer_data_end);
+	m_upload_buffer_data_current += aligned_size;
+	assert(m_upload_buffer_data_current < m_upload_buffer_data_end);
 	increment_handles(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	return result;
@@ -65,14 +57,14 @@ void graphics::initialize_constant_buffers()
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(upload_buffer_size),
 		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(s_upload_buffer_resource.GetAddressOf())
+		IID_PPV_ARGS(m_upload_buffer_resource.GetAddressOf())
 	);
 
 	void* data;
 	D3D12_RANGE read_range{ 0, upload_buffer_size };
-	s_upload_buffer_resource->Map(0, &read_range, &data);
-	s_upload_buffer_data_current = s_upload_buffer_data_begin = static_cast<char*>(data);
-	s_upload_buffer_data_end = s_upload_buffer_data_begin + upload_buffer_size;
+	m_upload_buffer_resource->Map(0, &read_range, &data);
+	m_upload_buffer_data_current = m_upload_buffer_data_begin = static_cast<char*>(data);
+	m_upload_buffer_data_end = m_upload_buffer_data_begin + upload_buffer_size;
 
 	for (unsigned i = 0; i < frames_count; ++i)
 	{
@@ -85,25 +77,10 @@ ID3D12PipelineState* graphics::pipeline_state(
 	ID3D12RootSignature* const root_signature,
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE const primitive_topology_type,
 	D3D12_INPUT_LAYOUT_DESC const& input_layout_description,
-	wchar_t const* const vertex_shader_name,
-	wchar_t const* const pixel_shader_name
+	ID3DBlob* const vertex_shader,
+	ID3DBlob* const pixel_shader
 )
 {
-	ComPtr<ID3DBlob> vertex_shader;
-	ComPtr<ID3DBlob> pixel_shader;
-	ComPtr<ID3DBlob> errors;
-
-	auto const render_objects_count_string = std::to_string(render_object_instances_count);
-
-	D3D_SHADER_MACRO const shader_macros[] = {
-		{ "RENDER_OBJECT_INSTANCES_COUNT", render_objects_count_string.c_str() },
-		{ nullptr, nullptr }
-	};
-
-	UINT const compile_flags = default_compile_flags();
-	ThrowIfFailed(D3DCompileFromFile(vertex_shader_name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compile_flags, 0, &vertex_shader, &errors), errors);
-	ThrowIfFailed(D3DCompileFromFile(pixel_shader_name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compile_flags, 0, &pixel_shader, &errors), errors);
-
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc{};
 	pso_desc.pRootSignature = root_signature;
 	pso_desc.VS = { vertex_shader->GetBufferPointer(), vertex_shader->GetBufferSize() };
@@ -155,34 +132,97 @@ ID3D12RootSignature*		graphics::root_signature()
 }
 D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size)
 {
-	memcpy(s_upload_buffer_data_current, vertices, vertices_size);
+	memcpy(m_upload_buffer_data_current, vertices, vertices_size);
 	m_vertex_buffer_views[m_vertex_buffer_views_count++] = {
-		s_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(s_upload_buffer_data_current - s_upload_buffer_data_begin),
+		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),
 		vertices_size,
 		vertex_size
 	};
 	assert(m_vertex_buffer_views_count < max_vertex_buffer_views_count);
 
-	s_upload_buffer_data_current += aligned(vertices_size, 4);
-	assert(s_upload_buffer_data_current < s_upload_buffer_data_end);
+	m_upload_buffer_data_current += aligned(vertices_size, 4);
+	assert(m_upload_buffer_data_current < m_upload_buffer_data_end);
 
 	return &m_vertex_buffer_views[m_vertex_buffer_views_count - 1];
 }
 
 D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format)
 {
-	memcpy(s_upload_buffer_data_current, indices, indices_size);
+	memcpy(m_upload_buffer_data_current, indices, indices_size);
 	m_index_buffer_views[m_index_buffer_views_count++] = {
-		s_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(s_upload_buffer_data_current - s_upload_buffer_data_begin),
+		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),
 		indices_size,
 		format
 	};
 	assert(m_index_buffer_views_count < max_index_buffer_views_count);
 
-	s_upload_buffer_data_current += aligned(indices_size, 4);
-	assert(s_upload_buffer_data_current < s_upload_buffer_data_end);
+	m_upload_buffer_data_current += aligned(indices_size, 4);
+	assert(m_upload_buffer_data_current < m_upload_buffer_data_end);
 
 	return &m_index_buffer_views[m_index_buffer_views_count - 1];
+}
+
+static inline UINT default_compile_flags()
+{
+#if defined(_DEBUG)
+	// Enable better shader debugging with the graphics debugging tools.
+	UINT const compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+	UINT const compileFlags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
+
+	return compileFlags;
+}
+
+ID3DBlob* graphics::vertex_shader(wchar_t const* const name)
+{
+	for (auto const& s : m_vertex_shaders)
+	{
+		if (s.first == name)
+			return s.second.Get();
+	}
+
+	auto& shader = m_vertex_shaders[m_vertex_shaders_count++];
+	shader.first = name;
+
+	ComPtr<ID3DBlob> errors;
+
+	auto const render_objects_count_string = std::to_string(render_object_instances_count);
+
+	D3D_SHADER_MACRO const shader_macros[] = {
+		{ "RENDER_OBJECT_INSTANCES_COUNT", render_objects_count_string.c_str() },
+		{ nullptr, nullptr }
+	};
+
+	UINT const compile_flags = default_compile_flags();
+	ThrowIfFailed(D3DCompileFromFile(name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compile_flags, 0, &shader.second, &errors), errors);
+	
+	return shader.second.Get();
+}
+
+ID3DBlob* graphics::pixel_shader(wchar_t const* const name)
+{
+	for (auto const& s : m_pixel_shaders)
+	{
+		if (s.first == name)
+			return s.second.Get();
+	}
+	auto& shader = m_pixel_shaders[m_pixel_shaders_count++];
+	shader.first = name;
+
+	ComPtr<ID3DBlob> errors;
+
+	auto const render_objects_count_string = std::to_string(render_object_instances_count);
+
+	D3D_SHADER_MACRO const shader_macros[] = {
+		{ "RENDER_OBJECT_INSTANCES_COUNT", render_objects_count_string.c_str() },
+		{ nullptr, nullptr }
+	};
+
+	UINT const compile_flags = default_compile_flags();
+	ThrowIfFailed(D3DCompileFromFile(name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compile_flags, 0, &shader.second, &errors), errors);
+
+	return shader.second.Get();
 }
 
 bool graphics::initialize(HWND main_window_handle)

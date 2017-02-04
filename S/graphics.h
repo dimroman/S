@@ -10,6 +10,8 @@
 #include "render_object.h"
 #include "render_object_instance.h"
 #include "global_defines.h"
+#include <utility>
+#include <string>
 
 using Microsoft::WRL::ComPtr;
 
@@ -50,12 +52,14 @@ public:
 											ID3D12RootSignature* const root_signature, 
 											D3D12_PRIMITIVE_TOPOLOGY_TYPE const primitive_topology_type,
 											D3D12_INPUT_LAYOUT_DESC const& input_layout_description,
-											wchar_t const* const vertex_shader_name,
-											wchar_t const* const pixel_shader_name
+											ID3DBlob* const vertex_shader,
+											ID3DBlob* const pixel_shader
 										);
 			ID3D12RootSignature*		root_signature			();
 			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view		(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
 			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view		(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
+			ID3DBlob*					vertex_shader			(wchar_t const* const name );
+			ID3DBlob*					pixel_shader			(wchar_t const* const name );
 
 			void						update_render_object_model_view_projection(math::float4x4 const& model_view_projection, unsigned const id, unsigned const current_frame_index);
 			void						update_render_object_color(math::float4 const& color, unsigned const id, unsigned const current_frame_index);
@@ -112,6 +116,12 @@ private:
 	unsigned m_vertex_buffer_views_count = 0;
 	D3D12_INDEX_BUFFER_VIEW m_index_buffer_views[max_index_buffer_views_count];
 	unsigned m_index_buffer_views_count = 0;
+
+	std::pair<std::wstring, ComPtr<ID3DBlob>> m_vertex_shaders[max_vertex_shaders_count];
+	unsigned m_vertex_shaders_count = 0;
+
+	std::pair<std::wstring, ComPtr<ID3DBlob>> m_pixel_shaders[max_pixel_shaders_count];
+	unsigned m_pixel_shaders_count = 0;
 private:
 
 private:
@@ -119,6 +129,16 @@ private:
 	constant_buffer_data m_per_frame_colors[frames_count];
 
 	DXGI_FORMAT const indices_render_target_format = DXGI_FORMAT_R32_UINT;
+
+private:
+
+	enum {
+		upload_buffer_size = 1024 * 1024,
+	};
+	ComPtr<ID3D12Resource> m_upload_buffer_resource;
+	char* m_upload_buffer_data_begin = nullptr;
+	char* m_upload_buffer_data_current = nullptr;
+	char* m_upload_buffer_data_end = nullptr;
 
 }; // class graphics
 

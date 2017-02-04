@@ -52,9 +52,15 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 			m_logic_object_instances_count++;
 		}
 	}
-	unsigned grid_cells_count = &m_logic_object_instances[m_logic_object_instances_count] - &grid_cells[0];
+	unsigned grid_cells_count = static_cast<unsigned>(&m_logic_object_instances[m_logic_object_instances_count] - &grid_cells[0]);
 	
-	auto* const grid_pipeline_state = graphics->pipeline_state(rectangle_root_signature, D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, rectangle_input_layout_description, L"Shaders//vertex_instance_position_x_mvp.hlsl", L"Shaders//instance_color_id.hlsl");
+	auto* const grid_pipeline_state = graphics->pipeline_state(
+		rectangle_root_signature, 
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, 
+		rectangle_input_layout_description, 
+		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"), 
+		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
+	);
 		
 	m_grid.initialize(
 		this,
@@ -94,7 +100,13 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 
 	math::float4 const color = math::float4(0.1f, 0.2f, 0.3f, 1.0f);
 
-	auto* const square_grid_pipeline_state = graphics->pipeline_state(rectangle_root_signature, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, rectangle_input_layout_description, L"Shaders//vertex_position_x_mvp.hlsl", L"Shaders//color_id.hlsl");
+	auto* const square_grid_pipeline_state = graphics->pipeline_state(
+		rectangle_root_signature, 
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, 
+		rectangle_input_layout_description, 
+		graphics->vertex_shader(L"Shaders//vertex_position_x_mvp.hlsl"), 
+		graphics->pixel_shader(L"Shaders//color_id.hlsl")
+	);
 
 	math::float4x4 model_transform = math::float4x4::identity();
 	model_transform.m[0][0] = m_cell_side_length;

@@ -21,8 +21,8 @@ private:
 		field_width = 16,
 		field_height = 16,
 	};
-	logic_object m_grid_cells[field_width*field_height];
-	render_object_owner m_grid_frames[field_width*field_height];
+	logic_object m_grid_cells;
+	render_object_owner m_grid_frames;
 
 	float const m_cell_radii = 1.0f;
 };
