@@ -3,70 +3,6 @@
 
 void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& view_projection)
 {
-	math::float2 hexagon_vertices[]{
-		{ 0.0f, 0.0f },
-		{ 0.0f, 1.0f },
-		{ 0.866025f, 0.5f },
-		{ 0.866025f, -0.5f },
-		{ 0.0f, -1.0f },
-		{ -0.866025f, -0.5f },
-		{ -0.866025f, 0.5f }
-	};
-
-	unsigned hexagon_indices[]{
-		0, 2, 1,
-		0, 3, 2,
-		0, 4, 3,
-		0, 5, 4,
-		0, 6, 5,
-		0, 1, 6
-	};
-
-	math::float2 hexagon_frame_vertices[]{
-		{ 0.0f, 1.0f },
-		{ 0.866025f, 0.5f },
-		{ 0.866025f, -0.5f },
-		{ 0.0f, -1.0f },
-		{ -0.866025f, -0.5f },
-		{ -0.866025f, 0.5f }
-	};
-
-	unsigned hexagon_frame_indices[]{
-		0, 1,
-		1, 2,
-		2, 3,
-		3, 4,
-		4, 5,
-		5, 0
-	};
-
-	auto* const hexagon_root_signature = graphics->root_signature();
-	D3D12_INPUT_ELEMENT_DESC const hexagon_input_element_description[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	};
-
-	D3D12_INPUT_LAYOUT_DESC const hexagon_input_layout_description{ hexagon_input_element_description, _countof(hexagon_input_element_description) };
-
-	auto* const hexagon_pipeline_state = graphics->pipeline_state(
-		hexagon_root_signature, 
-		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, 
-		hexagon_input_layout_description,
-		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"),
-		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
-	);
-	auto* const hexagon_frame_pipeline_state = graphics->pipeline_state(
-		hexagon_root_signature, 
-		D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, 
-		hexagon_input_layout_description,
-		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"),
-		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
-	);
-	auto const* const hexagon_vertex_buffer_view = graphics->vertex_buffer_view(hexagon_vertices, sizeof(hexagon_vertices), sizeof(math::float2));
-	auto const* const hexagon_index_buffer_view = graphics->index_buffer_view(hexagon_indices, sizeof(hexagon_indices), DXGI_FORMAT_R32_UINT);
-	auto const* const hexagon_frame_vertex_buffer_view = graphics->vertex_buffer_view(hexagon_frame_vertices, sizeof(hexagon_frame_vertices), sizeof(math::float2));
-	auto const* const hexagon_frame_index_buffer_view = graphics->index_buffer_view(hexagon_frame_indices, sizeof(hexagon_frame_indices), DXGI_FORMAT_R32_UINT);
-
 	math::float4x4 model_transforms[field_width*field_height];
 	math::float4 hexagon_colors[field_width*field_height];
 	math::float4 hexagon_frame_colors[field_width*field_height];
@@ -93,15 +29,23 @@ void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& v
 		}
 	}
 
+	auto* const hexagon_root_signature = graphics->root_signature();
+	auto* const hexagon_pipeline_state = graphics->pipeline_state(
+		hexagon_root_signature,
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		assets::vertex_position_float2_layout,
+		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"),
+		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
+	);
 	m_grid_cells.initialize(
 		this,
 		graphics->new_render_object(
 			&m_grid_cells,
 			hexagon_pipeline_state,
 			hexagon_root_signature,
-			hexagon_vertex_buffer_view,
+			graphics->vertex_buffer_view(assets::hexagon_vertices),
 			nullptr,
-			hexagon_index_buffer_view,
+			graphics->index_buffer_view(assets::hexagon_indices),
 			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 			view_projection,
 			&model_transforms[0],
@@ -112,14 +56,21 @@ void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& v
 		m_logic_object_instances_count
 	);
 
+	auto* const hexagon_frame_pipeline_state = graphics->pipeline_state(
+		hexagon_root_signature,
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
+		assets::vertex_position_float2_layout,
+		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"),
+		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
+	);
 	m_grid_frames.initialize(
 		graphics->new_render_object(
 			&m_grid_frames,
 			hexagon_frame_pipeline_state,
 			hexagon_root_signature,
-			hexagon_frame_vertex_buffer_view,
+			graphics->vertex_buffer_view(assets::hexagon_frame_vertices),
 			nullptr,
-			hexagon_frame_index_buffer_view,
+			graphics->index_buffer_view(assets::hexagon_frame_indices),
 			D3D_PRIMITIVE_TOPOLOGY_LINELIST,
 			view_projection,
 			&model_transforms[0],

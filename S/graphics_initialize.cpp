@@ -130,7 +130,8 @@ ID3D12RootSignature*		graphics::root_signature()
 
 	return m_root_signatures[m_root_signatures_count-1].Get();
 }
-D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size)
+
+D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view_impl(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size)
 {
 	memcpy(m_upload_buffer_data_current, vertices, vertices_size);
 	m_vertex_buffer_views[m_vertex_buffer_views_count++] = {
@@ -146,8 +147,10 @@ D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view(void const* const vertice
 	return &m_vertex_buffer_views[m_vertex_buffer_views_count - 1];
 }
 
-D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format)
+D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view_impl(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format)
 {
+	assert(format != DXGI_FORMAT_UNKNOWN);
+
 	memcpy(m_upload_buffer_data_current, indices, indices_size);
 	m_index_buffer_views[m_index_buffer_views_count++] = {
 		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),

@@ -2,30 +2,10 @@
 #include "graphics.h"
 
 void square_field::initialize( graphics* const graphics, math::float4x4 const& view_projection)
-{
-	math::float2 rectangle_vertices[]{
-		{ 0.5f, 0.5f },
-		{ -0.5f, 0.5f },
-		{ 0.5f, -0.5f },
-		{ -0.5f, -0.5f }
-	};
-
-	unsigned rectangle_indices[]{
-		0, 1, 2,
-		2, 1, 3
-	};
-	
+{	
 	auto* const rectangle_root_signature = graphics->root_signature();
-
-	D3D12_INPUT_ELEMENT_DESC const rectangle_input_element_description[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	};
-
-	D3D12_INPUT_LAYOUT_DESC const rectangle_input_layout_description{ rectangle_input_element_description, _countof(rectangle_input_element_description) };
-
-	auto const* const rectangle_vertex_buffer_view = graphics->vertex_buffer_view(rectangle_vertices, sizeof(rectangle_vertices), sizeof(math::float2));
-	auto const* const rectangle_index_buffer_view = graphics->index_buffer_view(rectangle_indices, sizeof(rectangle_indices), DXGI_FORMAT_R32_UINT);
+	auto const* const rectangle_vertex_buffer_view = graphics->vertex_buffer_view(assets::rectangle_vertices);
+	auto const* const rectangle_index_buffer_view = graphics->index_buffer_view(assets::rectangle_indices);
 
 	logic_object_instance* const grid_cells = m_logic_object_instances;
 
@@ -57,7 +37,7 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 	auto* const grid_pipeline_state = graphics->pipeline_state(
 		rectangle_root_signature, 
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, 
-		rectangle_input_layout_description, 
+		assets::vertex_position_float2_layout,
 		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"), 
 		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
 	);
@@ -82,8 +62,7 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 	);
 
 	unsigned const vertices_count = 2 * (field_width + 1 + field_height + 1);
-	unsigned const vertices_size = vertices_count * sizeof(math::float2);
-	math::float2*	vertices = static_cast<math::float2*>(malloc(vertices_size));
+	math::float2	vertices[vertices_count];
 	unsigned		index{ 0 };
 
 	for (unsigned i = 0; i <= field_width; ++i)
@@ -103,7 +82,7 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 	auto* const square_grid_pipeline_state = graphics->pipeline_state(
 		rectangle_root_signature, 
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, 
-		rectangle_input_layout_description, 
+		assets::vertex_position_float2_layout,
 		graphics->vertex_shader(L"Shaders//vertex_position_x_mvp.hlsl"), 
 		graphics->pixel_shader(L"Shaders//color_id.hlsl")
 	);
@@ -117,7 +96,7 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 			&m_square_grid,
 			square_grid_pipeline_state,
 			rectangle_root_signature,
-			graphics->vertex_buffer_view(vertices, vertices_size, sizeof(math::float2)),
+			graphics->vertex_buffer_view(vertices),
 			nullptr,
 			nullptr,
 			D3D_PRIMITIVE_TOPOLOGY_LINELIST,

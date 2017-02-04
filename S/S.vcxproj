@@ -169,6 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
+    <ClInclude Include="assets.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="global_defines.h" />

@@ -102,6 +102,9 @@
     <ClInclude Include="logic_object_instance.h">
       <Filter>logic\logic_object</Filter>
     </ClInclude>
+    <ClInclude Include="assets.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="application">

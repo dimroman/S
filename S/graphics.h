@@ -12,6 +12,7 @@
 #include "global_defines.h"
 #include <utility>
 #include <string>
+#include "assets.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -56,8 +57,16 @@ public:
 											ID3DBlob* const pixel_shader
 										);
 			ID3D12RootSignature*		root_signature			();
-			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view		(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
-			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view		(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
+			template<typename T, unsigned Size>
+			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view(T (&vertices)[Size])
+			{
+				return vertex_buffer_view_impl(vertices, sizeof(vertices), sizeof(T));
+			}
+			template<typename T, unsigned Size>
+			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view(T(&indices)[Size])
+			{
+				return index_buffer_view_impl(indices, sizeof(indices), std::is_same<unsigned, T>::value ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN);
+			}
 			ID3DBlob*					vertex_shader			(wchar_t const* const name );
 			ID3DBlob*					pixel_shader			(wchar_t const* const name );
 
@@ -69,6 +78,9 @@ private:
 
 			void						update					(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed);
 			void						initialize_constant_buffers();
+
+			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view_impl(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
+			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view_impl(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
 			
 private:
 
