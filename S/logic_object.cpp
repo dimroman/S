@@ -1,6 +1,6 @@
 #include "logic_object.h"
 #include "math.h"
-#include "render_object_instance.h"
+#include "graphics.h"
 
 void logic_object::set_selected(bool const value)
 {
@@ -30,7 +30,7 @@ bool logic_object::update_selection()
 	else if (current_selection_mask & object_is_selected)
 		color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-	m_render_object_instance->update_color(color);
+	m_graphics->update_color(color, m_render_object_instance_id);
 
 	return true;
 }

@@ -1,6 +1,5 @@
 #include "render_object.h"
 #include "helper_functions.h"
-#include "render_object_instance.h"
 
 void render_object::initialize(
 	ID3D12Device* const device,
@@ -11,7 +10,7 @@ void render_object::initialize(
 	D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view, 
 	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-	render_object_instance* instances,
+	unsigned const first_instance_index,
 	unsigned const instances_count
 )
 {
@@ -21,7 +20,7 @@ void render_object::initialize(
 	m_instance_vertex_buffer_view = instance_vertex_buffer_view;
 	m_index_buffer_view = index_buffer_view;
 	m_primitive_topology = primitive_topology;
-	m_instances = instances;
+	m_first_instance_index = first_instance_index;
 	m_instances_count = instances_count;
 
 	assert(!m_instance_vertex_buffer_view || instances_count == m_instance_vertex_buffer_view->SizeInBytes / m_instance_vertex_buffer_view->StrideInBytes);
@@ -69,14 +68,4 @@ void render_object::draw(ID3D12GraphicsCommandList* const command_list)
 		UINT const start_instance_location = 0;
 		command_list->DrawInstanced(vertex_count_per_instance, m_instances_count, start_vertex_location, start_instance_location);
 	}
-}
-
-void render_object::update_model(math::float4x4 const& model_transform, unsigned const instance_id) 
-{ 
-	m_instances[instance_id].update_model(model_transform); 
-}
-
-void render_object::update_color(math::float4 const& color, unsigned const instance_id) 
-{ 
-	m_instances[instance_id].update_color(color); 
 }

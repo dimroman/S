@@ -34,9 +34,6 @@
     <ClCompile Include="logic.cpp">
       <Filter>logic</Filter>
     </ClCompile>
-    <ClCompile Include="render_object_instance.cpp">
-      <Filter>graphics\render_object</Filter>
-    </ClCompile>
     <ClCompile Include="render_object_instance_owner.cpp">
       <Filter>logic</Filter>
     </ClCompile>
@@ -80,9 +77,6 @@
     <ClInclude Include="global_defines.h" />
     <ClInclude Include="logic.h">
       <Filter>logic</Filter>
-    </ClInclude>
-    <ClInclude Include="render_object_instance.h">
-      <Filter>graphics\render_object</Filter>
     </ClInclude>
     <ClInclude Include="assets.h">
       <Filter>graphics</Filter>

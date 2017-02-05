@@ -5,8 +5,6 @@
 #include "global_defines.h"
 #include "render_object_instance_owner.h"
 
-class render_object_instance;
-
 class logic_object : public render_object_instance_owner
 {
 public:

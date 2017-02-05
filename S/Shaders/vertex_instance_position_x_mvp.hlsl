@@ -15,7 +15,8 @@ struct vertex_shader_output
 vertex_shader_output main(vertex_shader_input input)
 {
 	vertex_shader_output result;
-	result.position = mul(float4(input.vertex_position, 0.0f, 1.0f), model_view_projections[id+input.instance_id]);
+	float4x4 model_view_projection = mul(model_transforms[id+input.instance_id], view_projection_transform);
+	result.position = mul(float4(input.vertex_position, 0.0f, 1.0f), model_view_projection);
 	result.instance_id = input.instance_id;
 	return result;
 }

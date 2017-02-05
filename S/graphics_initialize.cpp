@@ -69,7 +69,7 @@ void graphics::initialize_constant_buffers()
 
 	for (unsigned i = 0; i < frames_count; ++i)
 	{
-		m_per_frame_model_view_projections[i] = create_constant_buffer_view(sizeof(model_view_projection_constants));
+		m_per_frame_model_transforms[i] = create_constant_buffer_view(sizeof(model_transform_constants));
 		m_per_frame_colors[i] = create_constant_buffer_view(sizeof(color_constants));
 	}
 }
@@ -89,9 +89,12 @@ ID3D12PipelineState* graphics::pipeline_state(
 	};
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc{};
+	assert(root_signature);
 	pso_desc.pRootSignature = root_signature;
+	assert(vertex_shader);
 	pso_desc.VS = { vertex_shader->GetBufferPointer(), vertex_shader->GetBufferSize() };
-	pso_desc.PS = { pixel_shader->GetBufferPointer(), pixel_shader->GetBufferSize() };
+	if ( pixel_shader )
+		pso_desc.PS = { pixel_shader->GetBufferPointer(), pixel_shader->GetBufferSize() };
 	pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	pso_desc.DepthStencilState = depth_stencil_desc;
@@ -99,6 +102,7 @@ ID3D12PipelineState* graphics::pipeline_state(
 	pso_desc.NumRenderTargets = 2;
 	pso_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	pso_desc.RTVFormats[1] = indices_render_target_format;
+	pso_desc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	pso_desc.SampleDesc.Count = 1;
 	pso_desc.InputLayout = input_layout_description;
 	pso_desc.PrimitiveTopologyType = primitive_topology_type;
@@ -236,7 +240,7 @@ ID3DBlob* graphics::pixel_shader(wchar_t const* const name)
 
 bool graphics::initialize(HWND main_window_handle)
 {
-	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_depth_stencils) + _countof(m_per_frame_model_view_projections) + _countof(m_per_frame_colors));
+	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_depth_stencils) + _countof(m_per_frame_model_transforms) + _countof(m_per_frame_colors));
 	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, _countof(m_depth_stencils));
 
 	for (auto& t : m_swap_chain_buffers)
@@ -369,10 +373,10 @@ render_object* graphics::new_render_object(
 	math::float4x4 const* const model_transforms,
 	math::float4 const* const colors,
 	unsigned const instances_count,
-	render_object_instance*& out_render_object_instances
+	unsigned& out_first_render_object_instance_id
 )
 {
-	out_render_object_instances = &m_render_object_instances[m_render_object_instances_count];
+	out_first_render_object_instance_id = m_render_object_instances_count;
 	m_render_objects[m_render_objects_count].initialize(
 		m_d3d_device.Get(),
 		m_bundle_allocator.Get(),
@@ -382,22 +386,17 @@ render_object* graphics::new_render_object(
 		instance_vertex_buffer_view,
 		index_buffer_view,
 		primitive_topology,
-		&m_render_object_instances[m_render_object_instances_count],
+		m_render_object_instances_count,
 		instances_count
 	);
 
 	math::float4x4 model_view_projection;
 	for (unsigned i = 0; i < instances_count; ++i)
 	{
-		math::float4x4 const& model = model_transforms[i];
-		m_render_object_instances[m_render_object_instances_count].initialize(render_object_instance_owners[i], model, colors[i]);
+		m_model_transforms[m_render_object_instances_count] = model_transforms[i];
+		m_colors[m_render_object_instances_count] = colors[i];
+		m_render_object_instance_owners[m_render_object_instances_count] = render_object_instance_owners[i];
 
-		math::multiply(model, view_projection_transform, model_view_projection);
-		for (unsigned j = 0; j < frames_count; ++j)
-		{
-			update_render_object_model_view_projection(model_view_projection, m_render_object_instances_count, j);
-			update_render_object_color(colors[i], m_render_object_instances_count, j);
-		}
 		m_render_object_instances_count++;
 		assert(m_render_object_instances_count < render_object_instances_count);
 	}

@@ -1,6 +1,5 @@
 #include "square_field.h"
 #include "graphics.h"
-#include "render_object_instance.h"
 
 void square_field::initialize( graphics* const graphics, math::float4x4 const& view_projection)
 {	
@@ -37,7 +36,7 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
 	);
 
-	render_object_instance* render_object_instances = nullptr;
+	unsigned first_render_object_instance_id = unsigned(-1);
 
 	render_object_instance_owner* render_object_instance_owners[field_width*field_height];
 	for (unsigned i = 0; i < field_width*field_height; ++i)
@@ -55,13 +54,13 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 		model_transforms,
 		colors,
 		field_width*field_height,
-		render_object_instances
+		first_render_object_instance_id
 	);
 
-	assert(render_object_instances);
+	assert(first_render_object_instance_id != unsigned(-1));
 
 	for (unsigned i = 0; i < field_width*field_height; ++i)
-		render_object_instance_owners[i]->initialize(&render_object_instances[i]);
+		render_object_instance_owners[i]->initialize(graphics, first_render_object_instance_id++);
 
 	unsigned const vertices_count = 2 * (field_width + 1 + field_height + 1);
 	math::float2	vertices[vertices_count];
@@ -96,6 +95,8 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 
 	render_object_instance_owner* frame_owner = &m_grid_frame;
 
+	first_render_object_instance_id = unsigned(-1);
+
 	graphics->new_render_object(
 		&frame_owner,
 		square_grid_pipeline_state,
@@ -108,6 +109,8 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 		&model_transform,
 		&color,
 		1,
-		render_object_instances
+		first_render_object_instance_id
 	);
+
+	assert(first_render_object_instance_id != unsigned(-1));
 }

@@ -4,6 +4,7 @@
 #include "options.h"
 #include <vector>
 #include <process.h>
+#include "render_object_instance_owner.h"
 
 extern options g_options;
 extern unsigned g_current_frame_index;
@@ -18,21 +19,30 @@ void graphics::finalize()
 	CloseHandle(m_fence_event);
 }
 
-void graphics::update_render_object_model_view_projection(math::float4x4 const& model_view_projection, unsigned const id, unsigned const current_frame_index)
+void graphics::update_model_transforms(unsigned const current_frame_index)
 {
-	m_per_frame_model_view_projections[current_frame_index].update(
-		id * sizeof(model_view_projection),
-		&model_view_projection,
-		sizeof(model_view_projection)
+	m_per_frame_model_transforms[current_frame_index].update(
+		0,
+		m_model_transforms,
+		sizeof(m_model_transforms)
 	);
 }
 
-void graphics::update_render_object_color(math::float4 const& color, unsigned const id, unsigned const current_frame_index)
+void graphics::update_colors(unsigned const current_frame_index)
 {
 	m_per_frame_colors[current_frame_index].update(
-		id * sizeof(color),
-		&color,
-		sizeof(color)
+		0,
+		m_colors,
+		sizeof(m_colors)
+	);
+}
+
+void graphics::update_view_projection_transform(math::float4x4 const& view_projection_transform, unsigned const current_frame_index)
+{
+	m_per_frame_colors[current_frame_index].update(
+		render_object_instances_count*sizeof(math::float4),
+		&view_projection_transform,
+		sizeof(view_projection_transform)
 	);
 }
 
@@ -40,21 +50,10 @@ void graphics::update(float const last_frame_time, math::float4x4 const& look_at
 {
 	math::float4x4 view_projection;
 	math::multiply(perspective_projection_right_handed, look_at_right_handed, view_projection);
+	update_view_projection_transform(view_projection, g_current_frame_index);
 	
-	math::float4x4 model;
-	math::float4x4 model_view_projection;
-	math::float4 color;
-
-	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
-	{
-		m_render_object_instances[i].need_to_update_model(model);
-		math::multiply(model, view_projection, model_view_projection);
-		update_render_object_model_view_projection(model_view_projection, i, g_current_frame_index);		
-
-		if (m_render_object_instances[i].need_to_update_color(color))
-			update_render_object_color(color, i, g_current_frame_index);
-	}
-
+	update_model_transforms(g_current_frame_index);
+	update_colors(g_current_frame_index);
 }
 
 void graphics::run(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed)
@@ -90,7 +89,7 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	
 	command_list->OMSetRenderTargets(_countof(render_targets), render_targets, FALSE, &m_depth_stencils[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
 	command_list->SetGraphicsRootSignature(m_root_signatures[0].Get());
-	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_model_view_projections[g_current_frame_index].gpu_handle);
+	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_model_transforms[g_current_frame_index].gpu_handle);
 	
 	unsigned render_instance_index = 0;
 	for (unsigned i = 0; i < m_render_objects_count; ++i)
@@ -149,7 +148,7 @@ void graphics::select_object(math::rectangle<math::int2> const selection)
 	{
 		if (selected_object_instances[i] == m_selected_object_instances[i])
 			continue;
-		m_render_object_instances[i].set_selected(selected_object_instances[i]);
+		m_render_object_instance_owners[i]->set_selected(selected_object_instances[i]);
 		m_selected_object_instances[i] = selected_object_instances[i];
 	}
 }
@@ -178,7 +177,7 @@ void graphics::highlight_object(math::rectangle<math::int2> const selection)
 	{
 		if (highlighted_object_instances[i] == m_highlighted_object_instances[i])
 			continue;
-		m_render_object_instances[i].set_highlighted(highlighted_object_instances[i]);
+		m_render_object_instance_owners[i]->set_highlighted(highlighted_object_instances[i]);
 		m_highlighted_object_instances[i] = highlighted_object_instances[i];
 	}
 }
@@ -188,7 +187,7 @@ void graphics::remove_all_highlighting()
 	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
 	{
 		if (m_highlighted_object_instances[i])
-			m_render_object_instances[i].set_highlighted(false);
+			m_render_object_instance_owners[i]->set_highlighted(false);
 	}
 }
 
@@ -197,6 +196,17 @@ void graphics::remove_all_selection()
 	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
 	{
 		if (m_selected_object_instances[i])
-			m_render_object_instances[i].set_selected(false);
+			m_render_object_instance_owners[i]->set_selected(false);
 	}
+}
+
+
+void graphics::update_model_transform(math::float4x4 const& model_transform, unsigned const render_object_instance_id)
+{
+
+}
+
+void graphics::update_color(math::float4 const& color, unsigned const render_object_instance_id)
+{
+	m_colors[render_object_instance_id] = color;
 }

@@ -36,7 +36,7 @@ void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& v
 		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
 	);
 
-	render_object_instance* render_object_instances = nullptr;
+	unsigned first_render_object_instance_id = unsigned(-1);
 
 	render_object_instance_owner* render_object_instance_owners[field_width*field_height];
 	for (unsigned i = 0; i < field_width*field_height; ++i)
@@ -54,11 +54,13 @@ void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& v
 		&model_transforms[0],
 		&hexagon_colors[0],
 		field_width*field_height,
-		render_object_instances
+		first_render_object_instance_id
 	);
 
+	assert(first_render_object_instance_id != unsigned(-1));
+
 	for (unsigned i = 0; i < field_width*field_height; ++i)
-		render_object_instance_owners[i]->initialize(&render_object_instances[i]);
+		render_object_instance_owners[i]->initialize(graphics, first_render_object_instance_id++);
 
 	auto* const hexagon_frame_pipeline_state = graphics->pipeline_state(
 		hexagon_root_signature,
@@ -70,6 +72,9 @@ void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& v
 	render_object_instance_owner* frames_owner[field_width*field_height];
 	for (unsigned i = 0; i < field_width*field_height; ++i)
 		frames_owner[i] = &m_grid_frames[i];
+
+	first_render_object_instance_id = unsigned(-1);
+
 	graphics->new_render_object(
 		frames_owner,
 		hexagon_frame_pipeline_state,
@@ -82,9 +87,11 @@ void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& v
 		&model_transforms[0],
 		&hexagon_frame_colors[0],
 		field_width*field_height,
-		render_object_instances
+		first_render_object_instance_id
 	);
 
+	assert(first_render_object_instance_id != unsigned(-1));
+
 	for (unsigned i = 0; i < field_width*field_height; ++i)
-		frames_owner[i]->initialize(&render_object_instances[i]);
+		frames_owner[i]->initialize(graphics, first_render_object_instance_id++);
 }

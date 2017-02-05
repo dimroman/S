@@ -1,7 +1,8 @@
 #include "render_object_instance_owner.h"
-#include "render_object_instance.h"
+#include "graphics.h"
 
-void render_object_instance_owner::initialize(render_object_instance* const render_object_instance)
+void render_object_instance_owner::initialize(graphics* const graphics, unsigned const render_object_instance_id)
 {
-	m_render_object_instance = render_object_instance;
+	m_graphics = graphics;
+	m_render_object_instance_id = render_object_instance_id;
 }

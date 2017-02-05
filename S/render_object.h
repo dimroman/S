@@ -25,9 +25,10 @@ enum
 struct color_constants
 {
 	math::float4 colors[render_object_instances_count];
+	math::float4x4 view_projection_transform;
 };
 
-struct model_view_projection_constants
+struct model_transform_constants
 {
 	math::float4x4 model_view_projections[render_object_instances_count];
 };
@@ -63,15 +64,12 @@ public:
 		D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
 		D3D12_INDEX_BUFFER_VIEW const* index_buffer_view, 
 		D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-		render_object_instance* instances,
+		unsigned const first_instance_index,
 		unsigned const instances_count
 	);
 
 	void draw(ID3D12GraphicsCommandList* const command_list);
-
-	void update_model(math::float4x4 const& model_transform, unsigned const instance_id);
-	void update_color(math::float4 const& color, unsigned const instance_id);
-
+	
 	inline unsigned instances_count() const { return m_instances_count; }
 				
 private:
@@ -85,7 +83,7 @@ private:
 	D3D12_INDEX_BUFFER_VIEW const*	m_index_buffer_view = nullptr;	
 
 	D3D12_VERTEX_BUFFER_VIEW const* m_instance_vertex_buffer_view = nullptr;
-	render_object_instance*			m_instances = nullptr;
+	unsigned						m_first_instance_index = unsigned(-1);
 	unsigned						m_instances_count = 0;
 
 	D3D_PRIMITIVE_TOPOLOGY			m_primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };

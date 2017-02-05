@@ -8,7 +8,6 @@
 #include "sampler.h"
 #include "math.h"
 #include "render_object.h"
-#include "render_object_instance.h"
 #include "global_defines.h"
 #include <utility>
 #include <string>
@@ -50,8 +49,11 @@ public:
 											math::float4x4 const* const model_transforms,
 											math::float4 const* const colors,
 											unsigned const instances_count,
-											render_object_instance*& out_render_object_instances
+											unsigned& out_first_render_object_instance_id
 										);
+
+			void						update_model_transform(math::float4x4 const& model_transform, unsigned const render_object_instance_id);
+			void						update_color(math::float4 const& color, unsigned const render_object_instance_id);
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
 
 			ID3D12PipelineState*		pipeline_state			(
@@ -75,8 +77,9 @@ public:
 			ID3DBlob*					vertex_shader			(wchar_t const* const name );
 			ID3DBlob*					pixel_shader			(wchar_t const* const name );
 
-			void						update_render_object_model_view_projection(math::float4x4 const& model_view_projection, unsigned const id, unsigned const current_frame_index);
-			void						update_render_object_color(math::float4 const& color, unsigned const id, unsigned const current_frame_index);
+			void						update_model_transforms(unsigned const current_frame_index);
+			void						update_colors(unsigned const current_frame_index);
+			void						update_view_projection_transform(math::float4x4 const& view_projection_transform, unsigned const current_frame_index);
 			
 private:
 			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
@@ -109,7 +112,10 @@ private:
 
 	render_object						m_render_objects[render_objects_count];
 	unsigned							m_render_objects_count = 0;
-	render_object_instance				m_render_object_instances[render_object_instances_count];
+
+	render_object_instance_owner*		m_render_object_instance_owners[render_object_instances_count];
+	math::float4x4						m_model_transforms[render_object_instances_count];
+	math::float4						m_colors[render_object_instances_count];
 	unsigned							m_render_object_instances_count = 0;
 
 	bool m_selected_object_instances[render_object_instances_count];
@@ -143,7 +149,7 @@ private:
 private:
 
 private:
-	constant_buffer_data m_per_frame_model_view_projections[frames_count];
+	constant_buffer_data m_per_frame_model_transforms[frames_count];
 	constant_buffer_data m_per_frame_colors[frames_count];
 
 	DXGI_FORMAT const indices_render_target_format = DXGI_FORMAT_R32_UINT;
