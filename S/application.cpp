@@ -18,14 +18,24 @@ application::~application()
 
 }
 
-void application::on_mouse_down(int const x, int const y)
+void application::select_object(math::rectangle<math::int2> const selection)
 {
-	m_graphics.select_object(x, y);
+	m_graphics.select_object(selection);
 }
 
-void application::on_mouse_move(int const new_x, int const new_y)
+void application::highlight_object(math::rectangle<math::int2> const selection)
 {
-	m_graphics.highlight_object(new_x, new_y);
+	m_graphics.highlight_object(selection);
+}
+
+void application::remove_all_highlighting()
+{
+	m_graphics.remove_all_highlighting();
+}
+
+void application::remove_all_selection()
+{
+	m_graphics.remove_all_selection();
 }
 
 LRESULT CALLBACK

@@ -243,27 +243,34 @@ void input::on_key_up(UINT8 const key)
 
 void input::on_mouse_down(WPARAM const button_state, int const x, int const y)
 {
-	m_owner->on_mouse_down(x, y);
+	m_mouse_is_down = true;
+	m_last_mouse_down_position = { x, y };
 }
 
 void input::on_mouse_up(WPARAM const button_state, int const x, int const y)
 {
-
+	m_mouse_is_down = false;
+	math::rectangle<math::int2> const selection(math::int2{ x, y }, m_last_mouse_down_position);
+	m_owner->select_object(selection);
+	m_owner->remove_all_highlighting();
 }
 
 void input::on_mouse_move(WPARAM const button_state, int const x, int const y)
 {
+	math::int2 position{ x, y };
 	if ((button_state & MK_LBUTTON) != 0)
 	{
-		last_dx = math::to_radians(0.01f*static_cast<float>(x - last_mouse_x));
-		last_dy = math::to_radians(0.01f*static_cast<float>(y - last_mouse_y));
+		last_dx = math::to_radians(0.01f*static_cast<float>(x - m_last_mouse_position.x));
+		last_dy = math::to_radians(0.01f*static_cast<float>(y - m_last_mouse_position.y));
 	}
 
-	if (last_mouse_x != x || last_mouse_y != y)
-		m_owner->on_mouse_move(x, y);
+	if (m_mouse_is_down)
+	{
+		math::rectangle<math::int2> const selection(position, m_last_mouse_down_position);
+		m_owner->highlight_object(selection);
+	}
 
-	last_mouse_x = x;
-	last_mouse_y = y;
+	m_last_mouse_position = position;
 }
 
 void input::reset()

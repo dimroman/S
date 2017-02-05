@@ -23,7 +23,7 @@ public:
 	void initialize_rtv(ID3D12Device* device, IDXGISwapChain3* swap_chain, int const buffer_id);
 
 	void update_readback_resource(ID3D12GraphicsCommandList* command_list);
-	unsigned readback_value(int const offset) const;
+	inline ID3D12Resource* readback_resource() const { return m_texture_readback_heap.Get(); }
 
 	ID3D12Resource* resource() { return m_resource.Get(); }
 	inline D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE const type) const { return m_gpu_handles[type]; }

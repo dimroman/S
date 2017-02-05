@@ -34,8 +34,10 @@ public:
 
 	inline	void						increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE const type, unsigned const value) { m_descriptor_heap_sizes[type] += value; }
 
-			void						select_object			(int const x, int const y);
-			void						highlight_object		(int const x, int const y);
+			void						select_object			(math::rectangle<math::int2> const selection);
+			void						highlight_object		(math::rectangle<math::int2> const selection);
+			void						remove_all_highlighting	();
+			void						remove_all_selection	();
 			render_object*				new_render_object(
 											render_object_instance_owner** const render_object_instance_owners,
 											ID3D12PipelineState* const pipeline_state,
@@ -109,8 +111,8 @@ private:
 	render_object_instance				m_render_object_instances[render_object_instances_count];
 	unsigned							m_render_object_instances_count = 0;
 
-	unsigned							m_selected_render_object_instance_id = 0;
-	unsigned							m_highlighted_render_object_instance_id = 0;
+	bool m_selected_object_instances[render_object_instances_count];
+	bool m_highlighted_object_instances[render_object_instances_count];
 		
 	D3D12_VIEWPORT	m_screen_viewport;
 	D3D12_RECT		m_scissor_rectangle;

@@ -124,24 +124,78 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	m_fence_values[g_current_frame_index] = max_fence_value + 1;
 }
 
-void graphics::select_object(int const x, int const y)
-{
-	unsigned const selected_object_instance_id = m_indices_render_targets[g_current_frame_index].readback_value(x + y * g_options.screen_width);
-	if (m_selected_render_object_instance_id == selected_object_instance_id)
-		return;
-	
-	m_render_object_instances[m_selected_render_object_instance_id].set_selected(false);
-	m_selected_render_object_instance_id = selected_object_instance_id;
-	m_render_object_instances[m_selected_render_object_instance_id].set_selected(true);
+void graphics::select_object(math::rectangle<math::int2> const selection)
+{	
+	bool selected_object_instances[render_object_instances_count]{ false };
+
+	void* data;
+	D3D12_RANGE const read_range{ 0, 0 };
+	ThrowIfFailed(m_indices_render_targets[g_current_frame_index].readback_resource()->Map(0, &read_range, &data));
+	unsigned const* const ids = static_cast<unsigned*>(data);
+	for ( int y = selection.left_down.y; y <= selection.right_up.y; ++y)
+	{
+		int const start_index = selection.left_down.x + y * g_options.screen_width;
+		int const end_index = selection.right_up.x + y * g_options.screen_width + 1;
+		SIZE_T const begin = start_index * sizeof(unsigned);
+		SIZE_T const end = end_index * sizeof(unsigned);
+		
+		for ( int i = start_index, n = end_index; i < n; ++i)
+			selected_object_instances[ids[i]] = true;
+	}
+	m_indices_render_targets[g_current_frame_index].readback_resource()->Unmap(0, nullptr);
+
+	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
+	{
+		if (selected_object_instances[i] == m_selected_object_instances[i])
+			continue;
+		m_render_object_instances[i].set_selected(selected_object_instances[i]);
+		m_selected_object_instances[i] = selected_object_instances[i];
+	}
 }
 
-void graphics::highlight_object(int const x, int const y)
+void graphics::highlight_object(math::rectangle<math::int2> const selection)
 {
-	unsigned const highlighted_object_instance_id = m_indices_render_targets[g_current_frame_index].readback_value(x + y * g_options.screen_width);
-	if (m_highlighted_render_object_instance_id == highlighted_object_instance_id)
-		return;
+	bool highlighted_object_instances[render_object_instances_count]{ false };
+	
+	void* data;
+	D3D12_RANGE const read_range{ 0, 0 };
+	ThrowIfFailed(m_indices_render_targets[g_current_frame_index].readback_resource()->Map(0, &read_range, &data));
+	unsigned const* const ids = static_cast<unsigned*>(data);
+	for ( int y = selection.left_down.y; y <= selection.right_up.y; ++y)
+	{
+		int const start_index = selection.left_down.x + y * g_options.screen_width;
+		int const end_index = selection.right_up.x + y * g_options.screen_width;
+		SIZE_T const begin = start_index * sizeof(unsigned);
+		SIZE_T const end = end_index * sizeof(unsigned);
 
-	m_render_object_instances[m_highlighted_render_object_instance_id].set_highlighted(false);
-	m_highlighted_render_object_instance_id = highlighted_object_instance_id;
-	m_render_object_instances[m_highlighted_render_object_instance_id].set_highlighted(true);
+		for (int i = start_index, n = end_index; i < n; ++i)
+			highlighted_object_instances[ids[i]] = true;
+	}
+	m_indices_render_targets[g_current_frame_index].readback_resource()->Unmap(0, nullptr);
+
+	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
+	{
+		if (highlighted_object_instances[i] == m_highlighted_object_instances[i])
+			continue;
+		m_render_object_instances[i].set_highlighted(highlighted_object_instances[i]);
+		m_highlighted_object_instances[i] = highlighted_object_instances[i];
+	}
+}
+
+void graphics::remove_all_highlighting()
+{
+	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
+	{
+		if (m_highlighted_object_instances[i])
+			m_render_object_instances[i].set_highlighted(false);
+	}
+}
+
+void graphics::remove_all_selection()
+{
+	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
+	{
+		if (m_selected_object_instances[i])
+			m_render_object_instances[i].set_selected(false);
+	}
 }

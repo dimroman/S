@@ -119,18 +119,6 @@ void texture::update_readback_resource(ID3D12GraphicsCommandList* command_list)
 	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
 }
 
-unsigned texture::readback_value(int const offset) const
-{
-	UINT64 const buffer_size = GetRequiredIntermediateSize(m_resource.Get(), 0, m_description.MipLevels);
-	
-	void* data = nullptr;
-	D3D12_RANGE read_range{ offset*sizeof(unsigned),(offset+1)*sizeof(unsigned) };
-	ThrowIfFailed(m_texture_readback_heap->Map(0, &read_range, &data));
-	auto result = *(static_cast<unsigned*>(data) + offset);
-	m_texture_readback_heap->Unmap(0, nullptr);
-	return result;
-}
-
 void texture::initialize_cbv_srv_uav(ID3D12Device* device, DXGI_FORMAT const format)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC desc{};

@@ -5,6 +5,7 @@
 #include "graphics.h"
 #include "logic.h"
 #include "camera.h"
+#include "math.h"
 
 #pragma comment(lib,"d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
@@ -20,8 +21,10 @@ public:
 
 	int run();
 
-	void on_mouse_down(int const x, int const y);
-	void on_mouse_move(int const new_x, int const new_y);
+	void select_object	(math::rectangle<math::int2> const selection);
+	void highlight_object(math::rectangle<math::int2> const selection);
+	void remove_all_highlighting();
+	void remove_all_selection();
 
 private:
 	HINSTANCE m_application_instance_handle = nullptr;

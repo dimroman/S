@@ -3,8 +3,37 @@
 
 #include <math.h>
 #include <assert.h>
+#include <algorithm>
 
 namespace math {
+
+struct int2
+{
+	int2(int const x, int const y) : x(x), y(y) {}
+	inline bool operator==(int2 const other) { return x == other.x && y == other.y; }
+	inline bool operator!=(int2 const other) { return x != other.x || y != other.y; }
+
+	int x = 0;
+	int y = 0;
+};
+
+struct uint2
+{
+	unsigned x = 0;
+	unsigned y = 0;
+};
+
+template<typename T>
+struct rectangle
+{
+	rectangle(T const first, T const second) :
+		left_down(std::min(first.x, second.x), std::min(first.y, second.y)),
+		right_up(std::max(first.x, second.x), std::max(first.y, second.y))
+	{ }
+
+	T left_down;
+	T right_up;
+};
 
 inline float to_radians(float const degrees) { return degrees * 3.1415927f / 180.0f; };
 inline float to_degrees(float const radians) { return radians * 180.0f / 3.1415927f; }

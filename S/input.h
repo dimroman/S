@@ -19,8 +19,6 @@ struct input
 
 	void reset();
 
-	int last_mouse_x = 0;
-	int last_mouse_y = 0;
 	float last_dx = 0;
 	float last_dy = 0;
 
@@ -31,6 +29,9 @@ struct input
 
 private:
 	application* m_owner = nullptr;
+	bool m_mouse_is_down = false;
+	math::int2 m_last_mouse_down_position{ 0, 0 };
+	math::int2 m_last_mouse_position{ 0, 0 };
 };
 
 #endif // #ifndef INPUT_H_INCLUDED
