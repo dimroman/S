@@ -16,6 +16,8 @@
 
 using Microsoft::WRL::ComPtr;
 
+class render_object_instance_owner;
+
 class graphics
 {
 public:
@@ -35,7 +37,7 @@ public:
 			void						select_object			(int const x, int const y);
 			void						highlight_object		(int const x, int const y);
 			render_object*				new_render_object(
-											render_object_owner* const owner,
+											render_object_instance_owner** const render_object_instance_owners,
 											ID3D12PipelineState* const pipeline_state,
 											ID3D12RootSignature* const root_signature,
 											D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
@@ -45,7 +47,8 @@ public:
 											math::float4x4 const& view_projection_transform,
 											math::float4x4 const* const model_transforms,
 											math::float4 const* const colors,
-											unsigned const instances_count
+											unsigned const instances_count,
+											render_object_instance*& out_render_object_instances
 										);
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
 

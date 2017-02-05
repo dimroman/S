@@ -55,7 +55,6 @@ class render_object
 {
 public:
 	void initialize(
-		render_object_owner* const owner,
 		ID3D12Device* const device,
 		ID3D12CommandAllocator* const bundle_allocator,
 		ID3D12PipelineState* const pipeline_state, 
@@ -69,9 +68,6 @@ public:
 	);
 
 	void draw(ID3D12GraphicsCommandList* const command_list);
-	
-	void set_selected(render_object_instance* const instance, bool const value);
-	void set_highlighted(render_object_instance* const instance, bool const value);
 
 	void update_model(math::float4x4 const& model_transform, unsigned const instance_id);
 	void update_color(math::float4 const& color, unsigned const instance_id);
@@ -92,7 +88,6 @@ private:
 	render_object_instance*			m_instances = nullptr;
 	unsigned						m_instances_count = 0;
 
-	render_object_owner*			m_owner = nullptr;
 	D3D_PRIMITIVE_TOPOLOGY			m_primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
 
 };

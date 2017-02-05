@@ -31,22 +31,16 @@
     <ClCompile Include="sampler.cpp">
       <Filter>graphics</Filter>
     </ClCompile>
-    <ClCompile Include="logic_object.cpp">
-      <Filter>logic\logic_object</Filter>
-    </ClCompile>
-    <ClCompile Include="logic_world.cpp">
-      <Filter>logic\logic_world</Filter>
-    </ClCompile>
-    <ClCompile Include="render_object_owner.cpp">
-      <Filter>logic</Filter>
-    </ClCompile>
     <ClCompile Include="logic.cpp">
       <Filter>logic</Filter>
     </ClCompile>
     <ClCompile Include="render_object_instance.cpp">
       <Filter>graphics\render_object</Filter>
     </ClCompile>
-    <ClCompile Include="logic_object_instance.cpp">
+    <ClCompile Include="render_object_instance_owner.cpp">
+      <Filter>logic</Filter>
+    </ClCompile>
+    <ClCompile Include="logic_object.cpp">
       <Filter>logic\logic_object</Filter>
     </ClCompile>
   </ItemGroup>
@@ -83,15 +77,6 @@
     <ClInclude Include="sampler.h">
       <Filter>graphics</Filter>
     </ClInclude>
-    <ClInclude Include="logic_object.h">
-      <Filter>logic\logic_object</Filter>
-    </ClInclude>
-    <ClInclude Include="logic_world.h">
-      <Filter>logic\logic_world</Filter>
-    </ClInclude>
-    <ClInclude Include="render_object_owner.h">
-      <Filter>logic</Filter>
-    </ClInclude>
     <ClInclude Include="global_defines.h" />
     <ClInclude Include="logic.h">
       <Filter>logic</Filter>
@@ -99,11 +84,14 @@
     <ClInclude Include="render_object_instance.h">
       <Filter>graphics\render_object</Filter>
     </ClInclude>
-    <ClInclude Include="logic_object_instance.h">
-      <Filter>logic\logic_object</Filter>
-    </ClInclude>
     <ClInclude Include="assets.h">
       <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="render_object_instance_owner.h">
+      <Filter>logic</Filter>
+    </ClInclude>
+    <ClInclude Include="logic_object.h">
+      <Filter>logic\logic_object</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

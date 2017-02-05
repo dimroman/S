@@ -13,7 +13,6 @@ void logic::initialize(graphics& graphics, world_camera& camera)
 
 void logic::update()
 {
-	m_field.update();
 }
 
 void logic::finalize()

@@ -1,34 +1,58 @@
 #include "logic_object.h"
-#include "logic_world.h"
-#include "global_defines.h"
 #include "math.h"
-#include "render_object.h"
-#include "logic_object_instance.h"
+#include "render_object_instance.h"
 
-void logic_object::initialize(
-	logic_world* const owner,
-	render_object* const render_object, 
-	logic_object_instance* const instances, 
-	unsigned const instances_count
-)
+void logic_object::initialize(render_object_instance* const render_object_instance)
 {
-	super::initialize(render_object);
-	m_owner = owner;
-	m_instances = instances;
-	m_instances_count = instances_count;
+	m_render_object_instance = render_object_instance;
 }
 
-void logic_object::set_selected(unsigned const instance_id, bool const value)
-{ 
-	m_instances[instance_id].set_selected(value);
-}
-
-void logic_object::set_highlighted(unsigned const instance_id, bool const value)
-{ 
-	m_instances[instance_id].set_highlighted(value);
-}
-
-void logic_object::update_color(logic_object_instance* const instance, math::float4 const& color)
+void logic_object::set_selected(bool const value)
 {
-	super::update_color(color, static_cast<unsigned>(instance - &m_instances[0]));
+	m_is_selected = value;
+	for (unsigned i = 0; i < m_neighbours_count; ++i)
+		m_neighbours[i]->update_selection();
+	update_selection();
+}
+
+void logic_object::set_highlighted(bool const value)
+{
+	m_is_highlighted = value;
+	for (unsigned i = 0; i < m_neighbours_count; ++i)
+		m_neighbours[i]->update_selection();
+	update_selection();
+}
+
+bool logic_object::update_selection()
+{
+	unsigned current_selection_mask = object_in_default_state;
+
+	if (m_is_selected)
+		current_selection_mask |= object_is_selected;
+
+	if (m_is_highlighted)
+		current_selection_mask |= object_is_highlighted;
+
+	for (unsigned i = 0; i < m_neighbours_count; ++i)
+	{
+		if (m_neighbours[i]->is_selected())
+			current_selection_mask |= neighbour_is_selected;
+
+		if (m_neighbours[i]->is_highlighted())
+			current_selection_mask |= neighbour_is_highlighted;
+	}
+
+	math::float4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	if (current_selection_mask & neighbour_is_highlighted)
+		color = { 0.75f, 0.75f, 0.75f, 1.0f };
+	else if (current_selection_mask & object_is_highlighted)
+		color = { 0.25f, 0.25f, 0.25f, 1.0f };
+	else if (current_selection_mask & neighbour_is_selected)
+		color = { 0.5f, 0.5f, 0.5f, 1.0f };
+	else if (current_selection_mask & object_is_selected)
+		color = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+	m_render_object_instance->update_color(color);
+
+	return true;
 }

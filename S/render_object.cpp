@@ -1,10 +1,8 @@
 #include "render_object.h"
-#include "render_object_owner.h"
 #include "helper_functions.h"
 #include "render_object_instance.h"
 
 void render_object::initialize(
-	render_object_owner* const owner,
 	ID3D12Device* const device,
 	ID3D12CommandAllocator* const bundle_allocator,
 	ID3D12PipelineState* const pipeline_state, 
@@ -17,7 +15,6 @@ void render_object::initialize(
 	unsigned const instances_count
 )
 {
-	m_owner = owner;
 	m_pipeline_state = pipeline_state;
 	m_root_signature = root_signature;
 	m_vertex_buffer_view = vertex_buffer_view;
@@ -82,14 +79,4 @@ void render_object::update_model(math::float4x4 const& model_transform, unsigned
 void render_object::update_color(math::float4 const& color, unsigned const instance_id) 
 { 
 	m_instances[instance_id].update_color(color); 
-}
-
-void render_object::set_selected(render_object_instance* const instance, bool const value)
-{
-	m_owner->set_selected(static_cast<unsigned>(instance - m_instances), value);
-}
-
-void render_object::set_highlighted(render_object_instance* const instance, bool const value)
-{
-	m_owner->set_highlighted(static_cast<unsigned>(instance - m_instances), value);
 }

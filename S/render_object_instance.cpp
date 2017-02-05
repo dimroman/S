@@ -1,9 +1,10 @@
 #include "render_object_instance.h"
-#include "render_object.h"
+#include "render_object_instance_owner.h"
 
-void render_object_instance::initialize(render_object& owner, math::float4x4 const& model_transform, math::float4 const& color)
+void render_object_instance::initialize(render_object_instance_owner* const owner, math::float4x4 const& model_transform, math::float4 const& color)
 {
-	m_owner = &owner;
+	m_owner = owner;
+	assert(m_owner);
 	m_model_transform = model_transform;
 	m_color = color;
 }
@@ -42,10 +43,10 @@ void render_object_instance::update_color(math::float4 const& color)
 
 void render_object_instance::set_selected(bool const value)
 {
-	m_owner->set_selected(this, value);
+	m_owner->set_selected(value);
 }
 
 void render_object_instance::set_highlighted(bool const value)
 {
-	m_owner->set_highlighted(this, value);
+	m_owner->set_highlighted(value);
 }

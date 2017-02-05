@@ -2,6 +2,7 @@
 #include "options.h"
 #include "helper_functions.h"
 #include "d3dx12.h"
+#include "render_object_instance_owner.h"
 
 extern options g_options;
 
@@ -340,7 +341,7 @@ bool graphics::initialize(HWND main_window_handle)
 }
 
 render_object* graphics::new_render_object(
-	render_object_owner* const owner,
+	render_object_instance_owner** const render_object_instance_owners,
 	ID3D12PipelineState* const pipeline_state,
 	ID3D12RootSignature* const root_signature,
 	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
@@ -350,11 +351,12 @@ render_object* graphics::new_render_object(
 	math::float4x4 const& view_projection_transform,
 	math::float4x4 const* const model_transforms,
 	math::float4 const* const colors,
-	unsigned const instances_count
+	unsigned const instances_count,
+	render_object_instance*& out_render_object_instances
 )
 {
+	out_render_object_instances = &m_render_object_instances[m_render_object_instances_count];
 	m_render_objects[m_render_objects_count].initialize(
-		owner,
 		m_d3d_device.Get(),
 		m_bundle_allocator.Get(),
 		pipeline_state,
@@ -370,8 +372,8 @@ render_object* graphics::new_render_object(
 	math::float4x4 model_view_projection;
 	for (unsigned i = 0; i < instances_count; ++i)
 	{
-		math::float4x4 const model = model_transforms[i];
-		m_render_object_instances[m_render_object_instances_count].initialize(m_render_objects[m_render_objects_count], model, colors[i]);
+		math::float4x4 const& model = model_transforms[i];
+		m_render_object_instances[m_render_object_instances_count].initialize(render_object_instance_owners[i], model, colors[i]);
 
 		math::multiply(model, view_projection_transform, model_view_projection);
 		for (unsigned j = 0; j < frames_count; ++j)
