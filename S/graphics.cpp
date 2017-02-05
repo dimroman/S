@@ -81,13 +81,14 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 		m_swap_chain_buffers[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
 		m_indices_render_targets[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
 	};
-	command_list->OMSetRenderTargets(_countof(render_targets), render_targets, FALSE, nullptr);
 
 	float const clear_color[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	command_list->ClearRenderTargetView(m_swap_chain_buffers[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), clear_color, 0, nullptr);
 	float const zero_color[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	command_list->ClearRenderTargetView(m_indices_render_targets[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), zero_color, 0, nullptr);
+	command_list->ClearDepthStencilView(m_depth_stencils[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	
+	command_list->OMSetRenderTargets(_countof(render_targets), render_targets, FALSE, &m_depth_stencils[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
 	command_list->SetGraphicsRootSignature(m_root_signatures[0].Get());
 	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_model_view_projections[g_current_frame_index].gpu_handle);
 	

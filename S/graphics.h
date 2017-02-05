@@ -95,6 +95,7 @@ private:
 	ComPtr<IDXGISwapChain3>				m_swap_chain;
 	texture								m_swap_chain_buffers[frames_count];
 	texture								m_indices_render_targets[frames_count];
+	texture								m_depth_stencils[frames_count];
 	unsigned							m_frame_id = 0;
 
 	ComPtr<ID3D12Fence>					m_fence;

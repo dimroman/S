@@ -8,8 +8,8 @@ struct options
 
 	float const field_of_view = 60.0f;
 
-	float const far_plane = 125.0f;
-	float const near_plane = 0.01f;
+	float const far_plane = 25.0f;
+	float const near_plane = 1.0f;
 
 	inline float aspect_ratio() const { return static_cast<float>(screen_width) / static_cast<float>(screen_height); }
 };

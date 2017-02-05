@@ -92,6 +92,7 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 	math::float4x4 model_transform = math::float4x4::identity();
 	model_transform.m[0][0] = m_cell_side_length;
 	model_transform.m[1][1] = m_cell_side_length;
+	model_transform.m[2][3] = -0.0005f;
 
 	render_object_instance_owner* frame_owner = &m_grid_frame;
 

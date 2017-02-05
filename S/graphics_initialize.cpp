@@ -70,7 +70,7 @@ void graphics::initialize_constant_buffers()
 	for (unsigned i = 0; i < frames_count; ++i)
 	{
 		m_per_frame_model_view_projections[i] = create_constant_buffer_view(sizeof(model_view_projection_constants));
-		m_per_frame_colors[i] = create_constant_buffer_view(sizeof(model_view_projection_constants));
+		m_per_frame_colors[i] = create_constant_buffer_view(sizeof(color_constants));
 	}
 }
 
@@ -82,14 +82,19 @@ ID3D12PipelineState* graphics::pipeline_state(
 	ID3DBlob* const pixel_shader
 )
 {
+	D3D12_DEPTH_STENCIL_DESC depth_stencil_desc{ 
+		true, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_LESS_EQUAL, FALSE, D3D12_DEFAULT_STENCIL_READ_MASK, D3D12_DEFAULT_STENCIL_WRITE_MASK,
+		{ D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS },
+		{ D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS }
+	};
+
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc{};
 	pso_desc.pRootSignature = root_signature;
 	pso_desc.VS = { vertex_shader->GetBufferPointer(), vertex_shader->GetBufferSize() };
 	pso_desc.PS = { pixel_shader->GetBufferPointer(), pixel_shader->GetBufferSize() };
 	pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	pso_desc.DepthStencilState.DepthEnable = FALSE;
-	pso_desc.DepthStencilState.StencilEnable = FALSE;
+	pso_desc.DepthStencilState = depth_stencil_desc;
 	pso_desc.SampleMask = UINT_MAX;
 	pso_desc.NumRenderTargets = 2;
 	pso_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -231,13 +236,17 @@ ID3DBlob* graphics::pixel_shader(wchar_t const* const name)
 
 bool graphics::initialize(HWND main_window_handle)
 {
-	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_per_frame_model_view_projections) + _countof(m_per_frame_colors));
+	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_depth_stencils) + _countof(m_per_frame_model_view_projections) + _countof(m_per_frame_colors));
+	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, _countof(m_depth_stencils));
 
 	for (auto& t : m_swap_chain_buffers)
 		t.preinitialize(this, false, false, true);
 
 	for (auto& t : m_indices_render_targets)
 		t.preinitialize(this, false, false, true);
+
+	for (auto& t : m_depth_stencils)
+		t.preinitialize(this, true, true, false);
 	
 #if defined(DEBUG) || defined(_DEBUG) 
 	// Enable the D3D12 debug layer.
@@ -310,6 +319,14 @@ bool graphics::initialize(HWND main_window_handle)
 		m_indices_render_targets[i].initialize(m_d3d_device.Get(), 0, g_options.screen_width, g_options.screen_height, 1, indices_render_target_format, { 1, 0 }, D3D12_TEXTURE_LAYOUT_UNKNOWN, &clear_value, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, L"render_target", i);
 		m_indices_render_targets[i].initialize_rtv(m_d3d_device.Get(), indices_render_target_format);
 		m_indices_render_targets[i].initialize_readback_resource(m_d3d_device.Get());
+	}
+
+	for (int i = 0; i < frames_count; ++i)
+	{
+		m_depth_stencils[i].initialize(m_d3d_device.Get(), 0, g_options.screen_width, g_options.screen_height, 1, DXGI_FORMAT_R32_TYPELESS, { 1, 0 }, D3D12_TEXTURE_LAYOUT_UNKNOWN,
+			&clear_value(DXGI_FORMAT_D32_FLOAT, D3D12_DEPTH_STENCIL_VALUE{ 1.0f,0 }), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL, L"depth_stencil", i);
+		m_depth_stencils[i].initialize_dsv(m_d3d_device.Get(), DXGI_FORMAT_D32_FLOAT);
+		m_depth_stencils[i].initialize_cbv_srv_uav(m_d3d_device.Get(), DXGI_FORMAT_R32_FLOAT);
 	}
 		
 	m_screen_viewport.TopLeftX = 0;
