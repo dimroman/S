@@ -369,7 +369,6 @@ render_object* graphics::new_render_object(
 	D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
 	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
 	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-	math::float4x4 const& view_projection_transform,
 	math::float4x4 const* const model_transforms,
 	math::float4 const* const colors,
 	unsigned const instances_count,
@@ -390,7 +389,6 @@ render_object* graphics::new_render_object(
 		instances_count
 	);
 
-	math::float4x4 model_view_projection;
 	for (unsigned i = 0; i < instances_count; ++i)
 	{
 		m_model_transforms[m_render_object_instances_count] = model_transforms[i];

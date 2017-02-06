@@ -12,7 +12,7 @@ class graphics;
 class square_field
 {
 public:
-	void initialize( graphics* const graphics, math::float4x4 const& view_projection);
+	void initialize( graphics* const graphics);
 
 private:
 	enum {

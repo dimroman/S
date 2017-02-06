@@ -3,7 +3,7 @@
 
 extern options g_options;
 
-math::float4x4 world_camera::look_at_right_handed()
+math::float4x4 camera::look_at_right_handed()
 {
 	if (m_normalize_axis)
 	{
@@ -34,7 +34,7 @@ math::float4x4 world_camera::look_at_right_handed()
 	return result;
 }
 
-math::float4x4 world_camera::perspective_projection_right_handed() const
+math::float4x4 camera::perspective_projection_right_handed() const
 {
 	math::float4x4 result;
 
@@ -47,34 +47,34 @@ math::float4x4 world_camera::perspective_projection_right_handed() const
 	return result;
 }
 
-void world_camera::set_position(math::float3 const position)
+void camera::set_position(math::float3 const position)
 { 
 	m_position = position; 
 }
 
-void world_camera::set_look_position(math::float3 const position)
+void camera::set_look_position(math::float3 const position)
 {
 	m_axis_z = math::normalize(m_position - position);
 	m_axis_x = math::normalize(cross(m_axis_y, m_axis_z));
 	m_axis_y = math::normalize(cross(m_axis_z, m_axis_x));	
 }
 
-void world_camera::move_x(float const value)
+void camera::move_x(float const value)
 {
 	m_position = m_position + m_axis_x*value*10;
 }
 
-void world_camera::move_y(float const value)
+void camera::move_y(float const value)
 {
 	m_position = m_position + m_axis_y*value*10;
 }
 
-void world_camera::move_z(float const value)
+void camera::move_z(float const value)
 {
 	m_position = m_position + m_axis_z*value * 10;
 }
 
-void world_camera::rotate_around_up(float const radians)
+void camera::rotate_around_up(float const radians)
 {
 	math::float3x3 rotation = math::float3x3::rotation_around_axis_y(radians);
 
@@ -85,7 +85,7 @@ void world_camera::rotate_around_up(float const radians)
 	m_normalize_axis = true;
 }
 
-void world_camera::rotate_around_x(float const radians)
+void camera::rotate_around_x(float const radians)
 {
 	math::float3x3 rotation = math::float3x3::rotation( m_axis_x, radians);
 

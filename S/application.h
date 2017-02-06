@@ -26,13 +26,19 @@ public:
 	void remove_all_highlighting();
 	void remove_all_selection();
 
+	void move_camera_along_axis_x(float const value);
+	void move_camera_along_axis_z(float const value);
+
+	void rotate_camera_around_axis_x(float const value);
+	void rotate_camera_around_up_direction(float const value);
+
 private:
 	HINSTANCE m_application_instance_handle = nullptr;
 	HWND      m_main_window_handle = nullptr;
 
 	graphics			m_graphics;
 	logic				m_logic;
-	world_camera		m_camera;
+	camera				m_camera;
 };
 
 

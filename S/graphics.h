@@ -45,7 +45,6 @@ public:
 											D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
 											D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
 											D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-											math::float4x4 const& view_projection_transform,
 											math::float4x4 const* const model_transforms,
 											math::float4 const* const colors,
 											unsigned const instances_count,

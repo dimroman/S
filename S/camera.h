@@ -3,7 +3,7 @@
 
 #include "math.h"
 
-class world_camera {
+class camera {
 public:
 	math::float4x4 look_at_right_handed();
 	math::float4x4 perspective_projection_right_handed() const;

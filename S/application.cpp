@@ -38,56 +38,31 @@ void application::remove_all_selection()
 	m_graphics.remove_all_selection();
 }
 
-LRESULT CALLBACK
-MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+void application::move_camera_along_axis_x(float const value)
 {
-	UINT8 key = static_cast<UINT8>(wParam);
+	m_camera.move_x(value);
+}
 
-	switch (msg)
-	{
-		case WM_KEYDOWN:
-		{
-			g_input.on_key_down(key);
-			return 0;
-		}
-		case WM_KEYUP:
-		{
-			g_input.on_key_up(key);
-			return 0;
-		}
-		case WM_LBUTTONDOWN:
-		case WM_MBUTTONDOWN:
-		case WM_RBUTTONDOWN:
-		{
-			g_input.on_mouse_down(wParam, lParam & 0xffff, lParam >> 16 & 0xffff);
-			return 0;
-		}
-		case WM_LBUTTONUP:
-		case WM_MBUTTONUP:
-		case WM_RBUTTONUP:
-		{
-			g_input.on_mouse_up(wParam, lParam & 0xffff, lParam >> 16 & 0xffff);
-			return 0;
-		}
-		case WM_MOUSEMOVE:
-		{
-			g_input.on_mouse_move(wParam, lParam & 0xffff, lParam >> 16 & 0xffff);
-			return 0;
-		}
-		case WM_DESTROY:
-		{
-			PostQuitMessage(0);
-			return 0;
-		}
-	}
-	return DefWindowProc(hwnd, msg, wParam, lParam);
+void application::move_camera_along_axis_z(float const value)
+{
+	m_camera.move_z(value);
+}
+
+void application::rotate_camera_around_axis_x(float const value)
+{
+	//m_camera.rotate_around_x(value);
+}
+
+void application::rotate_camera_around_up_direction(float const value)
+{
+	//m_camera.rotate_around_up(value);
 }
 
 int application::run()
 {
 	WNDCLASS wc;
 	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = MainWndProc;
+	wc.lpfnWndProc = DefWindowProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = m_application_instance_handle;
@@ -134,7 +109,7 @@ int application::run()
 		return 0;
 
 	m_camera.set_look_position({ 0.0f, 0.0f, 0.0f });
-	m_logic.initialize(m_graphics, m_camera);
+	m_logic.initialize(m_graphics);
 	g_input.initialize(this);
 	
 	MSG msg = { 0 };
@@ -150,21 +125,8 @@ int application::run()
 		{
 			g_timer.Tick(NULL);
 			float const last_frame_time = static_cast<float>(g_timer.GetElapsedSeconds());
-			float const frameChange = 2.0f * last_frame_time;
 
-			//if (g_input.leftArrowPressed)
-			//	m_camera.move_x(-frameChange);
-			//if (g_input.rightArrowPressed)
-			//	m_camera.move_x(frameChange);
-			if (g_input.forward_arrow_pressed)
-				m_camera.move_z(-frameChange);
-			if (g_input.backward_arrow_pressed)
-				m_camera.move_z(frameChange);
-			//if (g_input.last_dx != 0.0f)
-			//	m_camera.rotate_around_up(-g_input.last_dx);
-			//if (g_input.last_dy != 0.0f)
-			//	m_camera.rotate_around_x(g_input.last_dy);
-
+			g_input.update(last_frame_time);
 			m_logic.update();
 			m_graphics.run(last_frame_time, m_camera.look_at_right_handed(), m_camera.perspective_projection_right_handed());
 			
@@ -188,8 +150,6 @@ int application::run()
 				frames_count = 0;
 				total_frame_time += 1.0f;
 			}
-
-			g_input.reset();
 		}
 	}
 

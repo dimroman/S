@@ -1,7 +1,7 @@
 #include "hexagon_field.h"
 #include "graphics.h"
 
-void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& view_projection)
+void hexagon_field::initialize(graphics* const graphics)
 {
 	math::float4x4 model_transforms[field_width*field_height];
 	math::float4 hexagon_colors[field_width*field_height];
@@ -50,7 +50,6 @@ void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& v
 		nullptr,
 		graphics->index_buffer_view(assets::hexagon_indices),
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		view_projection,
 		&model_transforms[0],
 		&hexagon_colors[0],
 		field_width*field_height,
@@ -83,7 +82,6 @@ void hexagon_field::initialize(graphics* const graphics, math::float4x4 const& v
 		nullptr,
 		graphics->index_buffer_view(assets::hexagon_frame_indices),
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
-		view_projection,
 		&model_transforms[0],
 		&hexagon_frame_colors[0],
 		field_width*field_height,

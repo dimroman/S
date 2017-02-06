@@ -1,7 +1,7 @@
 #include "square_field.h"
 #include "graphics.h"
 
-void square_field::initialize( graphics* const graphics, math::float4x4 const& view_projection)
+void square_field::initialize( graphics* const graphics)
 {	
 	auto* const rectangle_root_signature = graphics->root_signature();
 	auto const* const rectangle_vertex_buffer_view = graphics->vertex_buffer_view(assets::rectangle_vertices);
@@ -50,7 +50,6 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 		nullptr,
 		rectangle_index_buffer_view,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		view_projection,
 		model_transforms,
 		colors,
 		field_width*field_height,
@@ -91,7 +90,7 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 	math::float4x4 model_transform = math::float4x4::identity();
 	model_transform.m[0][0] = m_cell_side_length;
 	model_transform.m[1][1] = m_cell_side_length;
-	model_transform.m[2][3] = -0.0005f;
+	model_transform.m[2][3] = -0.001f;
 
 	render_object_instance_owner* frame_owner = &m_grid_frame;
 
@@ -105,7 +104,6 @@ void square_field::initialize( graphics* const graphics, math::float4x4 const& v
 		nullptr,
 		nullptr,
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
-		view_projection,
 		&model_transform,
 		&color,
 		1,
