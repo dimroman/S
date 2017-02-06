@@ -1,9 +1,7 @@
 #include "application.h"
-#include "input.h"
 #include <string>
 #include "StepTimer.h"
 
-input g_input;
 options g_options;
 StepTimer g_timer;
 
@@ -61,14 +59,14 @@ void application::rotate_camera_around_up_direction(float const value)
 int application::run()
 {
 	WNDCLASS wc;
-	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.style = 0;
 	wc.lpfnWndProc = DefWindowProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = m_application_instance_handle;
-	wc.hIcon = LoadIcon(0, IDI_APPLICATION);
+	wc.hIcon = 0;
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
+	wc.hbrBackground = 0;
 	wc.lpszMenuName = 0;
 	wc.lpszClassName = L"MainWnd";
 
@@ -78,24 +76,7 @@ int application::run()
 		return false;
 	}
 
-	// Compute window rectangle dimensions based on requested client area dimensions.
-	RECT R = { 0, 0, g_options.screen_width, g_options.screen_height };
-	AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
-
-	m_main_window_handle = 
-		CreateWindow(
-			L"MainWnd", 
-			L"Application",
-			WS_OVERLAPPEDWINDOW, 
-			CW_USEDEFAULT, 
-			CW_USEDEFAULT, 
-			g_options.screen_width,
-			g_options.screen_height,
-			0, 
-			0, 
-			m_application_instance_handle, 
-			0
-		);
+	m_main_window_handle = CreateWindow( wc.lpszClassName, 0, WS_POPUP, 0, 0, g_options.screen_width, g_options.screen_height, 0, 0, m_application_instance_handle, 0 );
 	if (!m_main_window_handle)
 	{
 		MessageBox(0, L"CreateWindow Failed.", 0, 0);
@@ -110,11 +91,11 @@ int application::run()
 
 	m_camera.set_look_position({ 0.0f, 0.0f, 0.0f });
 	m_logic.initialize(m_graphics);
-	g_input.initialize(this);
+	m_input.initialize(this);
 	
 	MSG msg = { 0 };
 	
-	while (msg.message != WM_QUIT)
+	while (!m_quit)
 	{
 		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{
@@ -126,7 +107,7 @@ int application::run()
 			g_timer.Tick(NULL);
 			float const last_frame_time = static_cast<float>(g_timer.GetElapsedSeconds());
 
-			g_input.update(last_frame_time);
+			m_input.update(last_frame_time);
 			m_logic.update();
 			m_graphics.run(last_frame_time, m_camera.look_at_right_handed(), m_camera.perspective_projection_right_handed());
 			

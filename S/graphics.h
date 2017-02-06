@@ -95,6 +95,7 @@ private:
 	ComPtr<ID3D12CommandAllocator>		m_bundle_allocator;
 
 	ComPtr<IDXGISwapChain3>				m_swap_chain;
+	unsigned							m_current_frame_index = 0;
 	texture								m_swap_chain_buffers[frames_count];
 	texture								m_indices_render_targets[frames_count];
 	texture								m_depth_stencils[frames_count];

@@ -13,6 +13,7 @@ enum {
 	a_keyboard_button,
 	s_keyboard_button,
 	d_keyboard_button,
+	quit_keyboard_button,
 	count
 };
 
@@ -31,6 +32,8 @@ private:
 	void on_left_mouse_button_down(POINT const cursor_position, float const last_frame_time);
 	void on_left_mouse_button_up(POINT const cursor_position, float const last_frame_time);
 
+	void quit(POINT const cursor_position, float const last_frame_time);
+
 private:
 	application* m_owner = nullptr;
 	bool m_mouse_is_down = false;
@@ -40,8 +43,8 @@ private:
 	POINT m_last_mouse_left_button_down_position{ 0, 0 };
 	POINT m_last_mouse_position{ 0, 0 };
 
-	unsigned char m_game_key_bindings[game_key::count];
-	unsigned char m_game_key_states[game_key::count];
+	unsigned char m_game_key_bindings[game_key::count]{ 0 };
+	unsigned char m_game_key_states[game_key::count]{ 0 };
 
 	using owner_callback_type = std::function<void(POINT const, float const)>;
 	owner_callback_type m_game_key_is_down_callbacks[game_key::count];

@@ -7,7 +7,6 @@
 #include "render_object_instance_owner.h"
 
 extern options g_options;
-extern unsigned g_current_frame_index;
 
 bool operator!=(D3D12_VERTEX_BUFFER_VIEW const left, D3D12_VERTEX_BUFFER_VIEW const right)
 {
@@ -16,6 +15,18 @@ bool operator!=(D3D12_VERTEX_BUFFER_VIEW const left, D3D12_VERTEX_BUFFER_VIEW co
 
 void graphics::finalize()
 {
+	auto max_fence_value = m_fence_values[(m_current_frame_index + frames_count - 1) % frames_count];
+	for (unsigned i = 0; i < frames_count - 1; ++i)
+	{
+		ThrowIfFailed(m_command_queue->Signal(m_fence.Get(), max_fence_value));
+		m_current_frame_index = (m_current_frame_index + 1) % frames_count;
+		if (m_fence->GetCompletedValue() < m_fence_values[m_current_frame_index])
+		{
+			ThrowIfFailed(m_fence->SetEventOnCompletion(m_fence_values[m_current_frame_index], m_fence_event));
+			WaitForSingleObject(m_fence_event, INFINITE);
+		}
+		max_fence_value++;
+	}
 	CloseHandle(m_fence_event);
 }
 
@@ -50,10 +61,10 @@ void graphics::update(float const last_frame_time, math::float4x4 const& look_at
 {
 	math::float4x4 view_projection;
 	math::multiply(perspective_projection_right_handed, look_at_right_handed, view_projection);
-	update_view_projection_transform(view_projection, g_current_frame_index);
+	update_view_projection_transform(view_projection, m_current_frame_index);
 	
-	update_model_transforms(g_current_frame_index);
-	update_colors(g_current_frame_index);
+	update_model_transforms(m_current_frame_index);
+	update_colors(m_current_frame_index);
 }
 
 void graphics::run(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed)
@@ -61,10 +72,10 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	m_frame_id++;
 
 	update(last_frame_time, look_at_right_handed, perspective_projection_right_handed);
-	auto& command_list = m_command_lists[g_current_frame_index];
+	auto& command_list = m_command_lists[m_current_frame_index];
 
-	m_direct_command_list_allocators[g_current_frame_index]->Reset();
-	command_list->Reset(m_direct_command_list_allocators[g_current_frame_index].Get(), nullptr);
+	m_direct_command_list_allocators[m_current_frame_index]->Reset();
+	command_list->Reset(m_direct_command_list_allocators[m_current_frame_index].Get(), nullptr);
 
 	ID3D12DescriptorHeap* const ppHeaps[] { 
 		m_descriptor_heaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Get() 
@@ -74,22 +85,22 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	command_list->RSSetViewports(1, &m_screen_viewport);
 	command_list->RSSetScissorRects(1, &m_scissor_rectangle);
 		
-	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_swap_chain_buffers[g_current_frame_index].resource(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_swap_chain_buffers[m_current_frame_index].resource(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 	D3D12_CPU_DESCRIPTOR_HANDLE const render_targets[] {
-		m_swap_chain_buffers[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-		m_indices_render_targets[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
+		m_swap_chain_buffers[m_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
+		m_indices_render_targets[m_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
 	};
 
 	float const clear_color[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-	command_list->ClearRenderTargetView(m_swap_chain_buffers[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), clear_color, 0, nullptr);
+	command_list->ClearRenderTargetView(m_swap_chain_buffers[m_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), clear_color, 0, nullptr);
 	float const zero_color[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	command_list->ClearRenderTargetView(m_indices_render_targets[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), zero_color, 0, nullptr);
-	command_list->ClearDepthStencilView(m_depth_stencils[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	command_list->ClearRenderTargetView(m_indices_render_targets[m_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), zero_color, 0, nullptr);
+	command_list->ClearDepthStencilView(m_depth_stencils[m_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	
-	command_list->OMSetRenderTargets(_countof(render_targets), render_targets, FALSE, &m_depth_stencils[g_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
+	command_list->OMSetRenderTargets(_countof(render_targets), render_targets, FALSE, &m_depth_stencils[m_current_frame_index].cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
 	command_list->SetGraphicsRootSignature(m_root_signatures[0].Get());
-	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_model_transforms[g_current_frame_index].gpu_handle);
+	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_model_transforms[m_current_frame_index].gpu_handle);
 	
 	unsigned render_instance_index = 0;
 	for (unsigned i = 0; i < m_render_objects_count; ++i)
@@ -99,9 +110,9 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 		render_instance_index += m_render_objects[i].instances_count();
 	}
 
-	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_swap_chain_buffers[g_current_frame_index].resource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_swap_chain_buffers[m_current_frame_index].resource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
-	m_indices_render_targets[g_current_frame_index].update_readback_resource(command_list.Get());
+	m_indices_render_targets[m_current_frame_index].update_readback_resource(command_list.Get());
 
 	command_list->Close();
 	ID3D12CommandList* command_lists[] = { command_list.Get() };
@@ -109,19 +120,19 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 
 	ThrowIfFailed(m_swap_chain->Present(0, 0));
 
-	auto const max_fence_value = m_fence_values[(g_current_frame_index + frames_count - 1) % frames_count];
+	auto const max_fence_value = m_fence_values[(m_current_frame_index + frames_count - 1) % frames_count];
 
 	ThrowIfFailed(m_command_queue->Signal(m_fence.Get(), max_fence_value));
 
-	g_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+	m_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
 
-	if (m_fence->GetCompletedValue() < m_fence_values[g_current_frame_index])
+	if (m_fence->GetCompletedValue() < m_fence_values[m_current_frame_index])
 	{
-		ThrowIfFailed(m_fence->SetEventOnCompletion(m_fence_values[g_current_frame_index], m_fence_event));
+		ThrowIfFailed(m_fence->SetEventOnCompletion(m_fence_values[m_current_frame_index], m_fence_event));
 		WaitForSingleObject(m_fence_event, INFINITE);
 	}
 
-	m_fence_values[g_current_frame_index] = max_fence_value + 1;
+	m_fence_values[m_current_frame_index] = max_fence_value + 1;
 }
 
 void graphics::select_object(math::rectangle<math::int2> const selection)
@@ -130,7 +141,7 @@ void graphics::select_object(math::rectangle<math::int2> const selection)
 
 	void* data;
 	D3D12_RANGE const read_range{ 0, 0 };
-	ThrowIfFailed(m_indices_render_targets[g_current_frame_index].readback_resource()->Map(0, &read_range, &data));
+	ThrowIfFailed(m_indices_render_targets[m_current_frame_index].readback_resource()->Map(0, &read_range, &data));
 	unsigned const* const ids = static_cast<unsigned*>(data);
 	for ( int y = selection.left_down.y; y <= selection.right_up.y; ++y)
 	{
@@ -142,7 +153,7 @@ void graphics::select_object(math::rectangle<math::int2> const selection)
 		for ( int i = start_index, n = end_index; i < n; ++i)
 			selected_object_instances[ids[i]] = true;
 	}
-	m_indices_render_targets[g_current_frame_index].readback_resource()->Unmap(0, nullptr);
+	m_indices_render_targets[m_current_frame_index].readback_resource()->Unmap(0, nullptr);
 
 	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
 	{
@@ -159,7 +170,7 @@ void graphics::highlight_object(math::rectangle<math::int2> const selection)
 	
 	void* data;
 	D3D12_RANGE const read_range{ 0, 0 };
-	ThrowIfFailed(m_indices_render_targets[g_current_frame_index].readback_resource()->Map(0, &read_range, &data));
+	ThrowIfFailed(m_indices_render_targets[m_current_frame_index].readback_resource()->Map(0, &read_range, &data));
 	unsigned const* const ids = static_cast<unsigned*>(data);
 	for ( int y = selection.left_down.y; y <= selection.right_up.y; ++y)
 	{
@@ -171,7 +182,7 @@ void graphics::highlight_object(math::rectangle<math::int2> const selection)
 		for (int i = start_index, n = end_index; i < n; ++i)
 			highlighted_object_instances[ids[i]] = true;
 	}
-	m_indices_render_targets[g_current_frame_index].readback_resource()->Unmap(0, nullptr);
+	m_indices_render_targets[m_current_frame_index].readback_resource()->Unmap(0, nullptr);
 
 	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
 	{

@@ -6,8 +6,6 @@
 
 extern options g_options;
 
-unsigned g_current_frame_index = 0;
-
 UINT graphics::descriptor_size(D3D12_DESCRIPTOR_HEAP_TYPE type)
 {
 	return m_descriptor_sizes[type];
@@ -293,7 +291,7 @@ bool graphics::initialize(HWND main_window_handle)
 	ThrowIfFailed(dxgi_factory->CreateSwapChainForHwnd( m_command_queue.Get(), main_window_handle, &swapChainDesc, nullptr, nullptr, &swapChain ));
 	ThrowIfFailed(dxgi_factory->MakeWindowAssociation( main_window_handle, DXGI_MWA_NO_ALT_ENTER ));
 	ThrowIfFailed(swapChain.As(&m_swap_chain));
-	g_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+	m_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
 		
 	if (m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] > 0)
 		create_descriptor_heap( m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 );
