@@ -5,6 +5,7 @@
 
 class camera {
 public:
+	camera(math::float3 const position);
 	math::float4x4 look_at_right_handed();
 	math::float4x4 perspective_projection_right_handed(float const field_of_view, float const aspect_ratio, float const far_plane, float const near_plane) const;
 

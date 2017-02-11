@@ -10,21 +10,39 @@
 #include <utility>
 #include <string>
 #include "assets.h"
+#include <vector>
+#include <map>
+#include "graphics_callbacks.h"
 
 using Microsoft::WRL::ComPtr;
 
-class render_object_instance_owner;
+class logic;
+
+class constant_buffer_data
+{
+public:
+	constant_buffer_data() = default;
+	constant_buffer_data(void* const mapped_data, D3D12_GPU_DESCRIPTOR_HANDLE const gpu_handle) :
+		m_mapped_data(static_cast<char*>(mapped_data)),
+		gpu_handle(gpu_handle)
+	{}
+	void update(unsigned const offset, void const* const data, unsigned const data_size)
+	{
+		memcpy(m_mapped_data + offset, data, data_size);
+	}
+	D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle{ 0 };
+private:
+	char* m_mapped_data = nullptr;
+};
 
 class graphics
 {
 public:
-			void						initialize				(unsigned const screen_width, unsigned const screen_height);
+										graphics				(logic* const logic, unsigned const screen_width, unsigned const screen_height);
+										~graphics				();
 			void						resize					(unsigned const screen_width, unsigned const screen_height);
 			void						run						(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed, unsigned const screen_width, unsigned const screen_height);
-			void						finalize				();
-
-			UINT						descriptor_size			(D3D12_DESCRIPTOR_HEAP_TYPE type);
-
+			
 	inline	ID3D12Device*				device					( ) const { return m_d3d_device.Get(); }
 	inline	D3D12_CPU_DESCRIPTOR_HANDLE current_cpu_handle		(D3D12_DESCRIPTOR_HEAP_TYPE const type) const { return m_current_cpu_handle[type]; }
 	inline	D3D12_GPU_DESCRIPTOR_HANDLE current_gpu_handle		(D3D12_DESCRIPTOR_HEAP_TYPE const type) const { return m_current_gpu_handle[type]; }
@@ -36,44 +54,46 @@ public:
 			void						highlight_object		(math::rectangle<math::uint2> const selection, unsigned const screen_width);
 			void						remove_all_highlighting	();
 			void						remove_all_selection	();
-			render_object*				new_render_object(
-											render_object_instance_owner** const render_object_instance_owners,
-											ID3D12PipelineState* const pipeline_state,
-											ID3D12RootSignature* const root_signature,
-											D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
-											D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
-											D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
+			void						new_render_object(
+											unsigned const pipeline_state_id,
+											unsigned const root_signature_id,
+											unsigned const vertex_buffer_view_id,
+											unsigned const instance_vertex_buffer_view_id,
+											unsigned const index_buffer_view_id,
 											D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
 											math::float4x4 const* const model_transforms,
 											math::float4 const* const colors,
 											unsigned const instances_count,
-											unsigned& out_first_render_object_instance_id
+											selection_updated_callback_type selection_updated_callback
 										);
 
-			void						update_model_transform(math::float4x4 const& model_transform, unsigned const render_object_instance_id);
-			void						update_color(math::float4 const& color, unsigned const render_object_instance_id);
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
 
-			ID3D12PipelineState*		pipeline_state			(
-											ID3D12RootSignature* const root_signature, 
+			unsigned					pipeline_state_id(
+											unsigned const root_signature_id, 
 											D3D12_PRIMITIVE_TOPOLOGY_TYPE const primitive_topology_type,
 											D3D12_INPUT_LAYOUT_DESC const& input_layout_description,
-											ID3DBlob* const vertex_shader,
-											ID3DBlob* const pixel_shader
+											wchar_t const* const vertex_shader_name,
+											wchar_t const* const pixel_shader_name
 										);
-			ID3D12RootSignature*		root_signature			();
+			inline ID3D12PipelineState*	pipeline_state(unsigned const id) const { return m_pipeline_states[id].Get(); }
+			unsigned					root_signature_id();
+			inline ID3D12RootSignature*	root_signature(unsigned const id) const { return m_root_signatures[id].Get(); }
 			template<typename T, unsigned Size>
-			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view(T (&vertices)[Size])
+			unsigned					vertex_buffer_view_id(T (&vertices)[Size])
 			{
-				return vertex_buffer_view_impl(vertices, sizeof(vertices), sizeof(T));
+				return vertex_buffer_view_id_impl(vertices, sizeof(vertices), sizeof(T));
 			}
 			template<typename T, unsigned Size>
-			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view(T(&indices)[Size])
+			unsigned					index_buffer_view_id(T(&indices)[Size])
 			{
-				return index_buffer_view_impl(indices, sizeof(indices), std::is_same<unsigned, T>::value ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN);
+				return index_buffer_view_id_impl(indices, sizeof(indices), std::is_same<unsigned, T>::value ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN);
 			}
 			ID3DBlob*					vertex_shader			(wchar_t const* const name );
 			ID3DBlob*					pixel_shader			(wchar_t const* const name );
+
+	inline	D3D12_VERTEX_BUFFER_VIEW&	vertex_buffer_view(unsigned const id) { return m_vertex_buffer_views[id]; }
+	inline	D3D12_INDEX_BUFFER_VIEW&	index_buffer_view(unsigned const id) { return m_index_buffer_views[id]; }
 
 			void						update_model_transforms(unsigned const current_frame_index);
 			void						update_colors(unsigned const current_frame_index);
@@ -85,8 +105,8 @@ private:
 			void						update					(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed);
 			void						initialize_constant_buffers();
 
-			D3D12_VERTEX_BUFFER_VIEW*	vertex_buffer_view_impl(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
-			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view_impl(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
+			unsigned					vertex_buffer_view_id_impl(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
+			unsigned					index_buffer_view_id_impl(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
 			
 private:
 	HWND								m_main_window_handle;
@@ -114,16 +134,17 @@ private:
 	ComPtr<ID3D12CommandAllocator>		m_direct_command_list_allocators[frames_count];
 	ComPtr<ID3D12GraphicsCommandList>	m_command_lists[frames_count];
 
-	render_object						m_render_objects[render_objects_count];
-	unsigned							m_render_objects_count = 0;
+	std::vector<render_object>			m_render_objects;
 
-	render_object_instance_owner*		m_render_object_instance_owners[render_object_instances_count];
+	logic* const						m_logic;
+
 	math::float4x4						m_model_transforms[render_object_instances_count];
 	math::float4						m_colors[render_object_instances_count];
+	bool								m_selected_object_instances[render_object_instances_count]{ false };
+	bool								m_highlighted_object_instances[render_object_instances_count]{ false };
+	selection_updated_callback_type		m_selection_updated_callbacks[render_object_instances_count];
 	unsigned							m_render_object_instances_count = 0;
 
-	bool m_selected_object_instances[render_object_instances_count]{ false };
-	bool m_highlighted_object_instances[render_object_instances_count]{ false };
 		
 	D3D12_VIEWPORT	m_screen_viewport;
 	D3D12_RECT		m_scissor_rectangle;
@@ -134,22 +155,13 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_current_cpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 	D3D12_GPU_DESCRIPTOR_HANDLE m_current_gpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 	
-	UINT m_descriptor_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
+	std::vector<ComPtr<ID3D12PipelineState>> m_pipeline_states;
+	std::vector<ComPtr<ID3D12RootSignature>> m_root_signatures;
+	std::vector<D3D12_VERTEX_BUFFER_VIEW>	m_vertex_buffer_views;
+	std::vector<D3D12_INDEX_BUFFER_VIEW>	m_index_buffer_views;
 
-	ComPtr<ID3D12PipelineState> m_pipeline_states[max_pipeline_states_count];
-	unsigned m_pipeline_states_count = 0;
-	ComPtr<ID3D12RootSignature> m_root_signatures[max_root_signatures_count];
-	unsigned m_root_signatures_count = 0;
-	D3D12_VERTEX_BUFFER_VIEW m_vertex_buffer_views[max_vertex_buffer_views_count];
-	unsigned m_vertex_buffer_views_count = 0;
-	D3D12_INDEX_BUFFER_VIEW m_index_buffer_views[max_index_buffer_views_count];
-	unsigned m_index_buffer_views_count = 0;
-
-	std::pair<std::wstring, ComPtr<ID3DBlob>> m_vertex_shaders[max_vertex_shaders_count];
-	unsigned m_vertex_shaders_count = 0;
-
-	std::pair<std::wstring, ComPtr<ID3DBlob>> m_pixel_shaders[max_pixel_shaders_count];
-	unsigned m_pixel_shaders_count = 0;
+	std::map<std::wstring, ComPtr<ID3DBlob>> m_vertex_shaders;
+	std::map<std::wstring, ComPtr<ID3DBlob>> m_pixel_shaders;
 private:
 
 private:

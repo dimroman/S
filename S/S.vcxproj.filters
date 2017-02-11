@@ -27,17 +27,14 @@
     <ClCompile Include="logic.cpp">
       <Filter>logic</Filter>
     </ClCompile>
-    <ClCompile Include="render_object_instance_owner.cpp">
-      <Filter>logic</Filter>
-    </ClCompile>
-    <ClCompile Include="logic_object.cpp">
-      <Filter>logic\logic_object</Filter>
-    </ClCompile>
     <ClCompile Include="camera.cpp">
       <Filter>camera</Filter>
     </ClCompile>
     <ClCompile Include="options.cpp">
       <Filter>options</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics_callbacks.cpp">
+      <Filter>graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -72,17 +69,14 @@
     <ClInclude Include="assets.h">
       <Filter>graphics</Filter>
     </ClInclude>
-    <ClInclude Include="render_object_instance_owner.h">
-      <Filter>logic</Filter>
-    </ClInclude>
-    <ClInclude Include="logic_object.h">
-      <Filter>logic\logic_object</Filter>
-    </ClInclude>
     <ClInclude Include="camera.h">
       <Filter>camera</Filter>
     </ClInclude>
     <ClInclude Include="options.h">
       <Filter>options</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics_callbacks.h">
+      <Filter>graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

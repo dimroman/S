@@ -1,61 +1,44 @@
 #include "render_object.h"
 #include "helper_functions.h"
+#include "graphics.h"
 
-void render_object::initialize(
+render_object::render_object(
 	ID3D12Device* const device,
 	ID3D12CommandAllocator* const bundle_allocator,
-	ID3D12PipelineState* const pipeline_state, 
-	ID3D12RootSignature* const root_signature, 
-	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
-	D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
-	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view, 
+	unsigned const pipeline_state_id, 
+	unsigned const root_signature_id,
+	unsigned const vertex_buffer_view_id,
+	unsigned const instance_vertex_buffer_view_id,
+	unsigned const index_buffer_view_id,
 	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-	unsigned const first_instance_index,
 	unsigned const instances_count
-)
+) :
+	m_pipeline_state_id(pipeline_state_id),
+	m_root_signature_id(root_signature_id),
+	m_vertex_buffer_view_id(vertex_buffer_view_id),
+	m_instance_vertex_buffer_view_id(instance_vertex_buffer_view_id),
+	m_index_buffer_view_id(index_buffer_view_id),
+	m_primitive_topology(primitive_topology),
+	m_instances_count(instances_count)
 {
-	m_pipeline_state = pipeline_state;
-	m_root_signature = root_signature;
-	m_vertex_buffer_view = vertex_buffer_view;
-	m_instance_vertex_buffer_view = instance_vertex_buffer_view;
-	m_index_buffer_view = index_buffer_view;
-	m_primitive_topology = primitive_topology;
-	m_first_instance_index = first_instance_index;
-	m_instances_count = instances_count;
-
-	assert(!m_instance_vertex_buffer_view || instances_count == m_instance_vertex_buffer_view->SizeInBytes / m_instance_vertex_buffer_view->StrideInBytes);
-
-	//ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, bundle_allocator, m_pipeline_state, IID_PPV_ARGS(&m_bundle)));
-	//m_bundle->SetPipelineState(m_pipeline_state);
-	//m_bundle->SetGraphicsRootSignature(m_root_signature);
-	//m_bundle->IASetPrimitiveTopology(m_primitive_topology);
-	//m_bundle->IASetVertexBuffers(0, 1, m_vertex_buffer_view);
-	//if (m_index_buffer_view)
-	//{
-	//	m_bundle->IASetIndexBuffer(m_index_buffer_view);
-	//	m_bundle->DrawIndexedInstanced(m_index_buffer_view->SizeInBytes / 4, 1, 0, 0, 0);
-	//}
-	//else
-	//	m_bundle->DrawInstanced(m_vertex_buffer_view->SizeInBytes / m_vertex_buffer_view->StrideInBytes, 1, 0, 0);
-	//ThrowIfFailed(m_bundle->Close());
 }
 
-void render_object::draw(ID3D12GraphicsCommandList* const command_list)
+void render_object::draw(ID3D12GraphicsCommandList* const command_list, graphics* const graphics) const
 {
-	//command_list->ExecuteBundle(m_bundle.Get());
-
-	command_list->SetPipelineState(m_pipeline_state);
-	command_list->SetGraphicsRootSignature(m_root_signature);
+	command_list->SetPipelineState(graphics->pipeline_state(m_pipeline_state_id));
+	command_list->SetGraphicsRootSignature(graphics->root_signature(m_root_signature_id));
 	command_list->IASetPrimitiveTopology(m_primitive_topology);
-	command_list->IASetVertexBuffers(0, 1, m_vertex_buffer_view);
-	if (m_instance_vertex_buffer_view)
-		command_list->IASetVertexBuffers(1, 1, m_instance_vertex_buffer_view);
-	if (m_index_buffer_view)
+	D3D12_VERTEX_BUFFER_VIEW const vertex_buffer_view = graphics->vertex_buffer_view(m_vertex_buffer_view_id);
+	command_list->IASetVertexBuffers(0, 1, &vertex_buffer_view);
+	if (m_instance_vertex_buffer_view_id!=unsigned(-1))
+		command_list->IASetVertexBuffers(1, 1, &graphics->vertex_buffer_view(m_instance_vertex_buffer_view_id));
+	if (m_index_buffer_view_id!=unsigned(-1))
 	{
-		command_list->IASetIndexBuffer(m_index_buffer_view);
-		assert(m_index_buffer_view->Format == DXGI_FORMAT_R32_UINT);
+		D3D12_INDEX_BUFFER_VIEW const index_buffer_view = graphics->index_buffer_view(m_index_buffer_view_id);
+		command_list->IASetIndexBuffer(&index_buffer_view);
+		assert(index_buffer_view.Format == DXGI_FORMAT_R32_UINT);
 		UINT const index_size = 4;
-		UINT const index_count_per_instance = m_index_buffer_view->SizeInBytes / index_size;
+		UINT const index_count_per_instance = index_buffer_view.SizeInBytes / index_size;
 		UINT const start_index_location = 0;
 		INT const base_vertex_location = 0;
 		UINT const start_instance_location = 0;
@@ -63,7 +46,7 @@ void render_object::draw(ID3D12GraphicsCommandList* const command_list)
 	}
 	else
 	{
-		UINT const vertex_count_per_instance = m_vertex_buffer_view->SizeInBytes / m_vertex_buffer_view->StrideInBytes;
+		UINT const vertex_count_per_instance = vertex_buffer_view.SizeInBytes / vertex_buffer_view.StrideInBytes;
 		UINT const start_vertex_location = 0;
 		UINT const start_instance_location = 0;
 		command_list->DrawInstanced(vertex_count_per_instance, m_instances_count, start_vertex_location, start_instance_location);

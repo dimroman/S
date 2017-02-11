@@ -1,7 +1,7 @@
 #include "hexagon_field.h"
 #include "graphics.h"
 
-void hexagon_field::initialize(graphics* const graphics)
+hexagon_field::hexagon_field(graphics* const graphics)
 {
 	math::float4x4 model_transforms[field_width*field_height];
 	math::float4 hexagon_colors[field_width*field_height];
@@ -27,69 +27,46 @@ void hexagon_field::initialize(graphics* const graphics)
 		}
 	}
 	
-	auto* const hexagon_root_signature = graphics->root_signature();
-	auto* const hexagon_pipeline_state = graphics->pipeline_state(
-		hexagon_root_signature,
+	unsigned const hexagon_root_signature_id = graphics->root_signature_id();
+	unsigned const hexagon_pipeline_state_id = graphics->pipeline_state_id(
+		hexagon_root_signature_id,
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
 		assets::vertex_position_float2_layout,
-		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"),
-		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
+		L"Shaders//vertex_instance_position_x_mvp.hlsl",
+		L"Shaders//instance_color_id.hlsl"
 	);
 
-	unsigned first_render_object_instance_id = unsigned(-1);
-
-	render_object_instance_owner* render_object_instance_owners[field_width*field_height];
-	for (unsigned i = 0; i < field_width*field_height; ++i)
-		render_object_instance_owners[i] = &m_grid_cells[i];
-
 	graphics->new_render_object(
-		render_object_instance_owners,
-		hexagon_pipeline_state,
-		hexagon_root_signature,
-		graphics->vertex_buffer_view(assets::hexagon_vertices),
-		nullptr,
-		graphics->index_buffer_view(assets::hexagon_indices),
+		hexagon_pipeline_state_id,
+		hexagon_root_signature_id,
+		graphics->vertex_buffer_view_id(assets::hexagon_vertices),
+		unsigned(-1),
+		graphics->index_buffer_view_id(assets::hexagon_indices),
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		&model_transforms[0],
 		&hexagon_colors[0],
 		field_width*field_height,
-		first_render_object_instance_id
+		default_selection_updated_callback
 	);
 
-	assert(first_render_object_instance_id != unsigned(-1));
-
-	for (unsigned i = 0; i < field_width*field_height; ++i)
-		render_object_instance_owners[i]->initialize(graphics, first_render_object_instance_id++);
-
-	auto* const hexagon_frame_pipeline_state = graphics->pipeline_state(
-		hexagon_root_signature,
+	unsigned const hexagon_frame_pipeline_state_id = graphics->pipeline_state_id(
+		hexagon_root_signature_id,
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
 		assets::vertex_position_float2_layout,
-		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"),
-		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
+		L"Shaders//vertex_instance_position_x_mvp.hlsl",
+		L"Shaders//instance_color_id.hlsl"
 	);
-	render_object_instance_owner* frames_owner[field_width*field_height];
-	for (unsigned i = 0; i < field_width*field_height; ++i)
-		frames_owner[i] = &m_grid_frames[i];
-
-	first_render_object_instance_id = unsigned(-1);
-
+	
 	graphics->new_render_object(
-		frames_owner,
-		hexagon_frame_pipeline_state,
-		hexagon_root_signature,
-		graphics->vertex_buffer_view(assets::hexagon_frame_vertices),
-		nullptr,
-		graphics->index_buffer_view(assets::hexagon_frame_indices),
+		hexagon_frame_pipeline_state_id,
+		hexagon_root_signature_id,
+		graphics->vertex_buffer_view_id(assets::hexagon_frame_vertices),
+		unsigned(-1),
+		graphics->index_buffer_view_id(assets::hexagon_frame_indices),
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
 		&model_transforms[0],
 		&hexagon_frame_colors[0],
 		field_width*field_height,
-		first_render_object_instance_id
+		empty_selection_updated_callback
 	);
-
-	assert(first_render_object_instance_id != unsigned(-1));
-
-	for (unsigned i = 0; i < field_width*field_height; ++i)
-		frames_owner[i]->initialize(graphics, first_render_object_instance_id++);
 }

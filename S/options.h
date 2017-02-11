@@ -8,7 +8,7 @@ class graphics;
 class options
 {
 public:
-	void initialize(graphics* const graphics);
+	options(graphics* const graphics);
 	void resize();
 	inline void update_screen_position(math::uint2 const position) { m_screen_position = position; }
 

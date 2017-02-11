@@ -1,5 +1,10 @@
 #include "camera.h"
 
+camera::camera(math::float3 const position)
+{
+	set_look_position(position);
+}
+
 math::float4x4 camera::look_at_right_handed()
 {
 	if (m_normalize_axis)

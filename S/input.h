@@ -25,9 +25,8 @@ class options;
 
 struct input
 {
-	void initialize(application* const owner, options* const options);
+		input(application* const owner, options* const options);
 	void update(float const last_frame_time);
-	void finalize() {}
 private:
 	void move_camera_along_axis_x(math::uint2 const cursor_position, float const last_frame_time, float const direction);
 	void move_camera_along_axis_z(math::uint2 const cursor_position, float const last_frame_time, float const direction);

@@ -2,14 +2,14 @@
 #include "helper_functions.h"
 #include "d3dx12.h"
 #include <process.h>
-#include "render_object_instance_owner.h"
+#include "logic.h"
 
 bool operator!=(D3D12_VERTEX_BUFFER_VIEW const left, D3D12_VERTEX_BUFFER_VIEW const right)
 {
 	return left.BufferLocation != right.BufferLocation || left.SizeInBytes != right.SizeInBytes || left.StrideInBytes != right.StrideInBytes;
 }
 
-void graphics::finalize()
+graphics::~graphics()
 {
 	UINT64 const max_fence_value = m_fence_values[(m_current_frame_index + frames_count - 1) % frames_count];
 	ThrowIfFailed(m_command_queue->Signal(m_fence.Get(), max_fence_value));
@@ -94,11 +94,11 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	command_list->SetGraphicsRootDescriptorTable(1, m_per_frame_model_transforms[m_current_frame_index].gpu_handle);
 	
 	unsigned render_instance_index = 0;
-	for (unsigned i = 0; i < m_render_objects_count; ++i)
+	for (auto const& object : m_render_objects)
 	{
 		command_list->SetGraphicsRoot32BitConstant(0, render_instance_index, 0);
-		m_render_objects[i].draw(command_list.Get());
-		render_instance_index += m_render_objects[i].instances_count();
+		object.draw(command_list.Get(), this);
+		render_instance_index += object.instances_count();
 	}
 
 	command_list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_swap_chain_buffers[m_current_frame_index].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -167,8 +167,8 @@ void graphics::select_object(math::rectangle<math::uint2> const selection, unsig
 	{
 		if (selected_object_instances[i] == m_selected_object_instances[i])
 			continue;
-		m_render_object_instance_owners[i]->set_selected(selected_object_instances[i]);
 		m_selected_object_instances[i] = selected_object_instances[i];
+		m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
 	}
 }
 
@@ -199,8 +199,8 @@ void graphics::highlight_object(math::rectangle<math::uint2> const selection, un
 	{
 		if (highlighted_object_instances[i] == m_highlighted_object_instances[i])
 			continue;
-		m_render_object_instance_owners[i]->set_highlighted(highlighted_object_instances[i]);
 		m_highlighted_object_instances[i] = highlighted_object_instances[i];
+		m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
 	}
 }
 
@@ -209,7 +209,10 @@ void graphics::remove_all_highlighting()
 	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
 	{
 		if (m_highlighted_object_instances[i])
-			m_render_object_instance_owners[i]->set_highlighted(false);
+		{
+			m_highlighted_object_instances[i] = false;
+			m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
+		}
 	}
 }
 
@@ -218,17 +221,9 @@ void graphics::remove_all_selection()
 	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
 	{
 		if (m_selected_object_instances[i])
-			m_render_object_instance_owners[i]->set_selected(false);
+		{
+			m_selected_object_instances[i] = false;
+			m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
+		}
 	}
-}
-
-
-void graphics::update_model_transform(math::float4x4 const& model_transform, unsigned const render_object_instance_id)
-{
-
-}
-
-void graphics::update_color(math::float4 const& color, unsigned const render_object_instance_id)
-{
-	m_colors[render_object_instance_id] = color;
 }

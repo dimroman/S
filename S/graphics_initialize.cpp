@@ -1,12 +1,8 @@
 #include "graphics.h"
 #include "helper_functions.h"
 #include "d3dx12.h"
-#include "render_object_instance_owner.h"
+#include "logic.h"
 
-UINT graphics::descriptor_size(D3D12_DESCRIPTOR_HEAP_TYPE type)
-{
-	return m_descriptor_sizes[type];
-}
 
 void graphics::create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask)
 {
@@ -20,8 +16,16 @@ void graphics::create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPT
 
 void graphics::increment_handles(D3D12_DESCRIPTOR_HEAP_TYPE const type)
 {
-	m_current_gpu_handle[type].ptr += descriptor_size(type);
-	m_current_cpu_handle[type].ptr += descriptor_size(type);
+	static UINT descriptor_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
+	if (static bool first_time = true)
+	{
+		for (UINT i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
+			descriptor_sizes[i] = m_d3d_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE(i));
+		first_time = false;
+	}
+
+	m_current_gpu_handle[type].ptr += descriptor_sizes[type];
+	m_current_cpu_handle[type].ptr += descriptor_sizes[type];
 }
 
 constant_buffer_data graphics::create_constant_buffer_view(unsigned const buffer_size)
@@ -61,6 +65,17 @@ void graphics::initialize_constant_buffers()
 	m_upload_buffer_resource->Map(0, &read_range, &data);
 	m_upload_buffer_data_current = m_upload_buffer_data_begin = static_cast<char*>(data);
 	m_upload_buffer_data_end = m_upload_buffer_data_begin + upload_buffer_size;
+	
+	struct color_constants
+	{
+		math::float4 colors[render_object_instances_count];
+		math::float4x4 view_projection_transform;
+	};
+
+	struct model_transform_constants
+	{
+		math::float4x4 model_view_projections[render_object_instances_count];
+	};
 
 	for (unsigned i = 0; i < frames_count; ++i)
 	{
@@ -69,14 +84,15 @@ void graphics::initialize_constant_buffers()
 	}
 }
 
-ID3D12PipelineState* graphics::pipeline_state(
-	ID3D12RootSignature* const root_signature,
+unsigned graphics::pipeline_state_id(
+	unsigned const root_signature_id,
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE const primitive_topology_type,
 	D3D12_INPUT_LAYOUT_DESC const& input_layout_description,
-	ID3DBlob* const vertex_shader,
-	ID3DBlob* const pixel_shader
+	wchar_t const* const vertex_shader_name,
+	wchar_t const* const pixel_shader_name
 )
 {
+	unsigned const result = static_cast<unsigned>(std::distance(std::begin(m_pipeline_states), std::end(m_pipeline_states)));
 	D3D12_DEPTH_STENCIL_DESC depth_stencil_desc{ 
 		true, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_LESS_EQUAL, FALSE, D3D12_DEFAULT_STENCIL_READ_MASK, D3D12_DEFAULT_STENCIL_WRITE_MASK,
 		{ D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS },
@@ -84,12 +100,16 @@ ID3D12PipelineState* graphics::pipeline_state(
 	};
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc{};
-	assert(root_signature);
-	pso_desc.pRootSignature = root_signature;
-	assert(vertex_shader);
-	pso_desc.VS = { vertex_shader->GetBufferPointer(), vertex_shader->GetBufferSize() };
-	if ( pixel_shader )
-		pso_desc.PS = { pixel_shader->GetBufferPointer(), pixel_shader->GetBufferSize() };
+	assert(root_signature_id!=unsigned(-1));
+	pso_desc.pRootSignature = m_root_signatures[root_signature_id].Get();
+	assert(vertex_shader_name);
+	auto* shader = vertex_shader(vertex_shader_name);
+	pso_desc.VS = { shader->GetBufferPointer(), shader->GetBufferSize() };
+	if (pixel_shader_name)
+	{
+		shader = pixel_shader(pixel_shader_name);
+		pso_desc.PS = { shader->GetBufferPointer(), shader->GetBufferSize() };
+	}
 	pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	pso_desc.DepthStencilState = depth_stencil_desc;
@@ -101,12 +121,12 @@ ID3D12PipelineState* graphics::pipeline_state(
 	pso_desc.SampleDesc.Count = 1;
 	pso_desc.InputLayout = input_layout_description;
 	pso_desc.PrimitiveTopologyType = primitive_topology_type;
-	ThrowIfFailed(m_d3d_device->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&m_pipeline_states[m_pipeline_states_count])));
-	m_pipeline_states_count++;
+	m_pipeline_states.push_back(0);
+	ThrowIfFailed(m_d3d_device->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&m_pipeline_states.back())));
 
-	return m_pipeline_states[m_pipeline_states_count-1].Get();
+	return result;
 }
-ID3D12RootSignature*		graphics::root_signature()
+unsigned graphics::root_signature_id()
 {
 	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData{ D3D_ROOT_SIGNATURE_VERSION_1_1 };
 	if (static bool first_time = true)
@@ -116,6 +136,7 @@ ID3D12RootSignature*		graphics::root_signature()
 		first_time = false;
 	}
 
+	unsigned const result = static_cast<unsigned>(std::distance(std::begin(m_root_signatures), std::end(m_root_signatures)));
 	D3D12_DESCRIPTOR_RANGE1 ranges[] = { // Perfomance TIP: Order from most frequent to least frequent.
 		{ D3D12_DESCRIPTOR_RANGE_TYPE_CBV,		2, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC,						D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
 	};
@@ -130,44 +151,44 @@ ID3D12RootSignature*		graphics::root_signature()
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
 	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&root_signature_desc, featureData.HighestVersion, &signature, &error), error);
-	ThrowIfFailed(m_d3d_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signatures[m_root_signatures_count])));
-	m_root_signatures_count++;
-
-	return m_root_signatures[m_root_signatures_count-1].Get();
+	m_root_signatures.push_back(0);
+	ThrowIfFailed(m_d3d_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signatures.back())));
+	
+	return result;
 }
 
-D3D12_VERTEX_BUFFER_VIEW*	graphics::vertex_buffer_view_impl(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size)
+unsigned graphics::vertex_buffer_view_id_impl(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size)
 {
+	unsigned const result = static_cast<unsigned>(std::distance(std::begin(m_vertex_buffer_views), std::end(m_vertex_buffer_views)));
 	memcpy(m_upload_buffer_data_current, vertices, vertices_size);
-	m_vertex_buffer_views[m_vertex_buffer_views_count++] = {
+	m_vertex_buffer_views.push_back({
 		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),
 		vertices_size,
 		vertex_size
-	};
-	assert(m_vertex_buffer_views_count < max_vertex_buffer_views_count);
+	});
 
 	m_upload_buffer_data_current += aligned(vertices_size, 4);
 	assert(m_upload_buffer_data_current < m_upload_buffer_data_end);
 
-	return &m_vertex_buffer_views[m_vertex_buffer_views_count - 1];
+	return result;
 }
 
-D3D12_INDEX_BUFFER_VIEW*	graphics::index_buffer_view_impl(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format)
+unsigned graphics::index_buffer_view_id_impl(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format)
 {
 	assert(format != DXGI_FORMAT_UNKNOWN);
+	unsigned const result = static_cast<unsigned>(std::distance(std::begin(m_index_buffer_views), std::end(m_index_buffer_views)));
 
 	memcpy(m_upload_buffer_data_current, indices, indices_size);
-	m_index_buffer_views[m_index_buffer_views_count++] = {
+	m_index_buffer_views.push_back({
 		m_upload_buffer_resource->GetGPUVirtualAddress() + static_cast<unsigned>(m_upload_buffer_data_current - m_upload_buffer_data_begin),
 		indices_size,
 		format
-	};
-	assert(m_index_buffer_views_count < max_index_buffer_views_count);
+	});
 
 	m_upload_buffer_data_current += aligned(indices_size, 4);
 	assert(m_upload_buffer_data_current < m_upload_buffer_data_end);
 
-	return &m_index_buffer_views[m_index_buffer_views_count - 1];
+	return result;
 }
 
 static inline UINT default_compile_flags()
@@ -184,14 +205,9 @@ static inline UINT default_compile_flags()
 
 ID3DBlob* graphics::vertex_shader(wchar_t const* const name)
 {
-	for (auto const& s : m_vertex_shaders)
-	{
-		if (s.first == name)
-			return s.second.Get();
-	}
-
-	auto& shader = m_vertex_shaders[m_vertex_shaders_count++];
-	shader.first = name;
+	auto& shader = m_vertex_shaders[name];
+	if (shader.Get())
+		return shader.Get();
 
 	ComPtr<ID3DBlob> errors;
 
@@ -203,20 +219,16 @@ ID3DBlob* graphics::vertex_shader(wchar_t const* const name)
 	};
 
 	UINT const compile_flags = default_compile_flags();
-	ThrowIfFailed(D3DCompileFromFile(name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compile_flags, 0, &shader.second, &errors), errors);
+	ThrowIfFailed(D3DCompileFromFile(name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compile_flags, 0, &shader, &errors), errors);
 	
-	return shader.second.Get();
+	return shader.Get();
 }
 
 ID3DBlob* graphics::pixel_shader(wchar_t const* const name)
 {
-	for (auto const& s : m_pixel_shaders)
-	{
-		if (s.first == name)
-			return s.second.Get();
-	}
-	auto& shader = m_pixel_shaders[m_pixel_shaders_count++];
-	shader.first = name;
+	auto& shader = m_pixel_shaders[name];
+	if (shader.Get())
+		return shader.Get();
 
 	ComPtr<ID3DBlob> errors;
 
@@ -228,9 +240,9 @@ ID3DBlob* graphics::pixel_shader(wchar_t const* const name)
 	};
 
 	UINT const compile_flags = default_compile_flags();
-	ThrowIfFailed(D3DCompileFromFile(name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compile_flags, 0, &shader.second, &errors), errors);
+	ThrowIfFailed(D3DCompileFromFile(name, shader_macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compile_flags, 0, &shader, &errors), errors);
 
-	return shader.second.Get();
+	return shader.Get();
 }
 
 void graphics::resize(unsigned const screen_width, unsigned const screen_height)
@@ -294,8 +306,8 @@ void graphics::resize(unsigned const screen_width, unsigned const screen_height)
 			IID_PPV_ARGS(&m_indices_rtv_readback_resource[i])));
 	}
 
-	SetWindowLong(m_main_window_handle, GWL_STYLE, screen_width==1920 ? WS_POPUP : WS_OVERLAPPEDWINDOW);
-	SetWindowPos( m_main_window_handle, screen_width==1920 ? HWND_NOTOPMOST : HWND_TOPMOST, 0, 0, screen_width, screen_height, 0);
+	SetWindowLong(m_main_window_handle, GWL_STYLE, screen_width==1920 ? WS_POPUP : WS_POPUP);
+	SetWindowPos( m_main_window_handle, screen_width==1920 ? HWND_NOTOPMOST : HWND_NOTOPMOST, 0, 0, screen_width, screen_height, 0);
 	ShowWindow(m_main_window_handle, SW_SHOW);
 	UpdateWindow(m_main_window_handle);
 
@@ -310,12 +322,13 @@ void graphics::resize(unsigned const screen_width, unsigned const screen_height)
 	m_scissor_rectangle = { 0, 0, static_cast<LONG>(screen_width), static_cast<LONG>(screen_height) };
 }
 
-void graphics::initialize(unsigned const screen_width, unsigned const screen_height)
+graphics::graphics(logic* const logic, unsigned const screen_width, unsigned const screen_height) :
+	m_logic(logic)
 {
 	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_per_frame_model_transforms) + _countof(m_per_frame_colors));
 	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, _countof(m_depth_stencils));
 	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, _countof(m_swap_chain_buffers) + _countof(m_indices_render_targets));
-			
+				
 	WNDCLASS wc{ 0, DefWindowProc, 0, 0, 0, 0, LoadCursor(0, IDC_ARROW), 0, 0, L"MainWnd" };
 	
 	if (!RegisterClass(&wc))
@@ -344,9 +357,6 @@ void graphics::initialize(unsigned const screen_width, unsigned const screen_hei
 #endif
 	ThrowIfFailed(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_d3d_device)));
 	
-	for (UINT i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
-		m_descriptor_sizes[i] = m_d3d_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE(i));
-
 	ThrowIfFailed(m_d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE, IID_PPV_ARGS(&m_bundle_allocator)));
 
 	ComPtr<ID3D12CommandAllocator> initialization_command_allocator;
@@ -500,45 +510,40 @@ void graphics::initialize(unsigned const screen_width, unsigned const screen_hei
 	}
 }
 
-render_object* graphics::new_render_object(
-	render_object_instance_owner** const render_object_instance_owners,
-	ID3D12PipelineState* const pipeline_state,
-	ID3D12RootSignature* const root_signature,
-	D3D12_VERTEX_BUFFER_VIEW const* vertex_buffer_view,
-	D3D12_VERTEX_BUFFER_VIEW const* instance_vertex_buffer_view,
-	D3D12_INDEX_BUFFER_VIEW const* index_buffer_view,
+void graphics::new_render_object(
+	unsigned const pipeline_state_id,
+	unsigned const root_signature_id,
+	unsigned const vertex_buffer_view_id,
+	unsigned const instance_vertex_buffer_view_id,
+	unsigned const index_buffer_view_id,
 	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
 	math::float4x4 const* const model_transforms,
 	math::float4 const* const colors,
 	unsigned const instances_count,
-	unsigned& out_first_render_object_instance_id
+	selection_updated_callback_type selection_updated_callback
 )
 {
-	out_first_render_object_instance_id = m_render_object_instances_count;
-	m_render_objects[m_render_objects_count].initialize(
+	m_render_objects.push_back( render_object(
 		m_d3d_device.Get(),
 		m_bundle_allocator.Get(),
-		pipeline_state,
-		root_signature,
-		vertex_buffer_view,
-		instance_vertex_buffer_view,
-		index_buffer_view,
+		pipeline_state_id,
+		root_signature_id,
+		vertex_buffer_view_id,
+		instance_vertex_buffer_view_id,
+		index_buffer_view_id,
 		primitive_topology,
-		m_render_object_instances_count,
 		instances_count
-	);
+	));
+
+	assert(instance_vertex_buffer_view_id==unsigned(-1) || instances_count == m_vertex_buffer_views[instance_vertex_buffer_view_id].SizeInBytes / m_vertex_buffer_views[instance_vertex_buffer_view_id].StrideInBytes);
 
 	for (unsigned i = 0; i < instances_count; ++i)
 	{
 		m_model_transforms[m_render_object_instances_count] = model_transforms[i];
 		m_colors[m_render_object_instances_count] = colors[i];
-		m_render_object_instance_owners[m_render_object_instances_count] = render_object_instance_owners[i];
+		m_selection_updated_callbacks[m_render_object_instances_count] = selection_updated_callback;
 
 		m_render_object_instances_count++;
 		assert(m_render_object_instances_count < render_object_instances_count);
 	}
-
-	render_object& result = m_render_objects[m_render_objects_count++];
-	assert(m_render_objects_count < render_objects_count);
-	return &result;
 }

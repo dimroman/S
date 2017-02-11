@@ -15,6 +15,8 @@
 class application
 {
 public:
+	application();
+	~application();
 	void run();
 
 	void select_object	(math::rectangle<math::uint2> const selection);
@@ -31,11 +33,11 @@ public:
 	inline void need_to_quit() { m_quit = true; }
 
 private:
+	options				m_options;
+	graphics			m_graphics;
 	input				m_input;
 	logic				m_logic;
 	camera				m_camera;
-	graphics			m_graphics;
-	options				m_options;
 
 	bool				m_quit = false;
 };

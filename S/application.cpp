@@ -4,6 +4,21 @@
 
 StepTimer g_timer;
 
+application::application() :
+	m_options(&m_graphics),
+	m_graphics(&m_logic, m_options.screen_width(), m_options.screen_height()),
+	m_camera({ 0.0f, 0.0f, 0.0f }),
+	m_logic(m_graphics),
+	m_input(this, &m_options)
+{
+
+}
+
+application::~application()
+{
+
+}
+
 void application::select_object(math::rectangle<math::uint2> const selection)
 {
 	m_graphics.select_object(selection, m_options.screen_width());
@@ -45,18 +60,11 @@ void application::rotate_camera_around_up_direction(float const value)
 }
 
 void application::run()
-{	
-	m_options.initialize(&m_graphics);
-	m_graphics.initialize(m_options.screen_width(), m_options.screen_height());
-	m_camera.set_look_position({ 0.0f, 0.0f, 0.0f });
-	m_logic.initialize(m_graphics);
-	m_input.initialize(this, &m_options);
-		
-	MSG msg;
-
-	unsigned frames_count = 0;
-	float total_frame_time = 0.0f;
-	std::wstring fps_text;
+{		
+	static MSG msg;
+	static unsigned frames_count = 0;
+	static float total_frame_time = 0.0f;
+	static std::wstring fps_text;
 	
 	while (!m_quit)
 	{
@@ -66,7 +74,6 @@ void application::run()
 		float const last_frame_time = static_cast<float>(g_timer.GetElapsedSeconds());
 
 		m_input.update(last_frame_time);
-		m_logic.update();
 		m_graphics.run(
 			last_frame_time, 
 			m_camera.look_at_right_handed(), 
@@ -90,8 +97,4 @@ void application::run()
 	}
 
 	OutputDebugStringW(fps_text.c_str());
-
-	m_input.finalize();
-	m_logic.finalize();
-	m_graphics.finalize();
 }

@@ -236,11 +236,10 @@ void input::on_left_mouse_button_up(math::uint2 const cursor_position, float con
 	m_owner->remove_all_highlighting();
 }
 
-void input::initialize(application* const owner, options* const options)
+input::input(application* const owner, options* const options) :
+	m_owner(owner),
+	m_options(options)
 {
-	m_owner = owner;
-	m_options = options;
-
 	m_game_key_bindings[game_key::left_mouse_button] = virtual_key_left_mouse_button;
 	m_game_key_bindings[game_key::w_keyboard_button] = virtual_key_w;
 	m_game_key_bindings[game_key::a_keyboard_button] = virtual_key_a;

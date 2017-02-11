@@ -151,16 +151,15 @@
     <ClCompile Include="application.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="graphics.cpp" />
+    <ClCompile Include="graphics_callbacks.cpp" />
     <ClCompile Include="graphics_initialize.cpp" />
     <ClCompile Include="hexagon_field.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="logic.cpp" />
-    <ClCompile Include="logic_object.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="options.cpp" />
     <ClCompile Include="render_object.cpp" />
-    <ClCompile Include="render_object_instance_owner.cpp" />
     <ClCompile Include="square_field.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -170,15 +169,14 @@
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="global_defines.h" />
     <ClInclude Include="graphics.h" />
+    <ClInclude Include="graphics_callbacks.h" />
     <ClInclude Include="helper_functions.h" />
     <ClInclude Include="hexagon_field.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="logic.h" />
-    <ClInclude Include="logic_object.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="render_object.h" />
-    <ClInclude Include="render_object_instance_owner.h" />
     <ClInclude Include="square_field.h" />
     <ClInclude Include="StepTimer.h" />
   </ItemGroup>

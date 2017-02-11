@@ -1,11 +1,11 @@
 #include "square_field.h"
 #include "graphics.h"
 
-void square_field::initialize( graphics* const graphics)
+square_field::square_field( graphics* const graphics)
 {	
-	auto* const rectangle_root_signature = graphics->root_signature();
-	auto const* const rectangle_vertex_buffer_view = graphics->vertex_buffer_view(assets::rectangle_vertices);
-	auto const* const rectangle_index_buffer_view = graphics->index_buffer_view(assets::rectangle_indices);
+	unsigned const rectangle_root_signature_id = graphics->root_signature_id();
+	unsigned const rectangle_vertex_buffer_view_id = graphics->vertex_buffer_view_id(assets::rectangle_vertices);
+	unsigned const rectangle_index_buffer_view_id = graphics->index_buffer_view_id(assets::rectangle_indices);
 	
 	math::float4x4 model_transforms[field_width*field_height];
 	math::float4 colors[field_width*field_height];
@@ -28,38 +28,26 @@ void square_field::initialize( graphics* const graphics)
 		}
 	}
 	
-	auto* const grid_pipeline_state = graphics->pipeline_state(
-		rectangle_root_signature, 
+	unsigned const grid_pipeline_state_id = graphics->pipeline_state_id(
+		rectangle_root_signature_id, 
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, 
 		assets::vertex_position_float2_layout,
-		graphics->vertex_shader(L"Shaders//vertex_instance_position_x_mvp.hlsl"), 
-		graphics->pixel_shader(L"Shaders//instance_color_id.hlsl")
+		L"Shaders//vertex_instance_position_x_mvp.hlsl", 
+		L"Shaders//instance_color_id.hlsl"
 	);
-
-	unsigned first_render_object_instance_id = unsigned(-1);
-
-	render_object_instance_owner* render_object_instance_owners[field_width*field_height];
-	for (unsigned i = 0; i < field_width*field_height; ++i)
-		render_object_instance_owners[i] = &m_grid_cells[i];
 		
 	graphics->new_render_object(
-		render_object_instance_owners,
-		grid_pipeline_state,
-		rectangle_root_signature,
-		rectangle_vertex_buffer_view,
-		nullptr,
-		rectangle_index_buffer_view,
+		grid_pipeline_state_id,
+		rectangle_root_signature_id,
+		rectangle_vertex_buffer_view_id,
+		unsigned(-1),
+		rectangle_index_buffer_view_id,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		model_transforms,
 		colors,
 		field_width*field_height,
-		first_render_object_instance_id
+		default_selection_updated_callback
 	);
-
-	assert(first_render_object_instance_id != unsigned(-1));
-
-	for (unsigned i = 0; i < field_width*field_height; ++i)
-		render_object_instance_owners[i]->initialize(graphics, first_render_object_instance_id++);
 
 	unsigned const vertices_count = 2 * (field_width + 1 + field_height + 1);
 	math::float2	vertices[vertices_count];
@@ -79,36 +67,29 @@ void square_field::initialize( graphics* const graphics)
 
 	math::float4 const color = math::float4(0.1f, 0.2f, 0.3f, 1.0f);
 
-	auto* const square_grid_pipeline_state = graphics->pipeline_state(
-		rectangle_root_signature, 
+	unsigned const square_grid_pipeline_state_id = graphics->pipeline_state_id(
+		rectangle_root_signature_id, 
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, 
 		assets::vertex_position_float2_layout,
-		graphics->vertex_shader(L"Shaders//vertex_position_x_mvp.hlsl"), 
-		graphics->pixel_shader(L"Shaders//color_id.hlsl")
+		L"Shaders//vertex_position_x_mvp.hlsl", 
+		L"Shaders//color_id.hlsl"
 	);
 
 	math::float4x4 model_transform = math::float4x4::identity();
 	model_transform.m[0][0] = m_cell_side_length;
 	model_transform.m[1][1] = m_cell_side_length;
 	model_transform.m[2][3] = -0.001f;
-
-	render_object_instance_owner* frame_owner = &m_grid_frame;
-
-	first_render_object_instance_id = unsigned(-1);
-
+		
 	graphics->new_render_object(
-		&frame_owner,
-		square_grid_pipeline_state,
-		rectangle_root_signature,
-		graphics->vertex_buffer_view(vertices),
-		nullptr,
-		nullptr,
+		square_grid_pipeline_state_id,
+		rectangle_root_signature_id,
+		graphics->vertex_buffer_view_id(vertices),
+		unsigned(-1),
+		unsigned(-1),
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
 		&model_transform,
 		&color,
 		1,
-		first_render_object_instance_id
+		empty_selection_updated_callback
 	);
-
-	assert(first_render_object_instance_id != unsigned(-1));
 }
