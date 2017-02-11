@@ -158,11 +158,10 @@
     <ClCompile Include="logic_object.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
+    <ClCompile Include="options.cpp" />
     <ClCompile Include="render_object.cpp" />
     <ClCompile Include="render_object_instance_owner.cpp" />
-    <ClCompile Include="sampler.cpp" />
     <ClCompile Include="square_field.cpp" />
-    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
@@ -180,10 +179,8 @@
     <ClInclude Include="options.h" />
     <ClInclude Include="render_object.h" />
     <ClInclude Include="render_object_instance_owner.h" />
-    <ClInclude Include="sampler.h" />
     <ClInclude Include="square_field.h" />
     <ClInclude Include="StepTimer.h" />
-    <ClInclude Include="texture.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color_id.hlsl">

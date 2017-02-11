@@ -15,15 +15,10 @@
 class application
 {
 public:
-	application(HINSTANCE handle_instance);
-	application(const application& rhs) = delete;
-	application& operator=(const application& rhs) = delete;
-	~application();
+	void run();
 
-	int run();
-
-	void select_object	(math::rectangle<math::int2> const selection);
-	void highlight_object(math::rectangle<math::int2> const selection);
+	void select_object	(math::rectangle<math::uint2> const selection);
+	void highlight_object(math::rectangle<math::uint2> const selection);
 	void remove_all_highlighting();
 	void remove_all_selection();
 
@@ -36,13 +31,11 @@ public:
 	inline void need_to_quit() { m_quit = true; }
 
 private:
-	HINSTANCE m_application_instance_handle = nullptr;
-	HWND      m_main_window_handle = nullptr;
-
-	graphics			m_graphics;
+	input				m_input;
 	logic				m_logic;
 	camera				m_camera;
-	input				m_input;
+	graphics			m_graphics;
+	options				m_options;
 
 	bool				m_quit = false;
 };

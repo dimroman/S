@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="camera.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="application.cpp">
@@ -25,12 +24,6 @@
     <ClCompile Include="hexagon_field.cpp">
       <Filter>logic\logic_world\hexagonal_field</Filter>
     </ClCompile>
-    <ClCompile Include="texture.cpp">
-      <Filter>graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="sampler.cpp">
-      <Filter>graphics</Filter>
-    </ClCompile>
     <ClCompile Include="logic.cpp">
       <Filter>logic</Filter>
     </ClCompile>
@@ -40,12 +33,16 @@
     <ClCompile Include="logic_object.cpp">
       <Filter>logic\logic_object</Filter>
     </ClCompile>
+    <ClCompile Include="camera.cpp">
+      <Filter>camera</Filter>
+    </ClCompile>
+    <ClCompile Include="options.cpp">
+      <Filter>options</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="camera.h" />
     <ClInclude Include="helper_functions.h" />
     <ClInclude Include="input.h" />
-    <ClInclude Include="options.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="application.h">
       <Filter>application</Filter>
@@ -65,13 +62,7 @@
     <ClInclude Include="hexagon_field.h">
       <Filter>logic\logic_world\hexagonal_field</Filter>
     </ClInclude>
-    <ClInclude Include="texture.h">
-      <Filter>graphics</Filter>
-    </ClInclude>
     <ClInclude Include="d3dx12.h">
-      <Filter>graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="sampler.h">
       <Filter>graphics</Filter>
     </ClInclude>
     <ClInclude Include="global_defines.h" />
@@ -86,6 +77,12 @@
     </ClInclude>
     <ClInclude Include="logic_object.h">
       <Filter>logic\logic_object</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>camera</Filter>
+    </ClInclude>
+    <ClInclude Include="options.h">
+      <Filter>options</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -127,6 +124,12 @@
     </Filter>
     <Filter Include="logic\logic_world\square_field">
       <UniqueIdentifier>{ef1de08a-62bc-4b90-8962-a0c6eae7b09c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="camera">
+      <UniqueIdentifier>{76df4f29-c81b-42f8-999f-3dec2d94ccf6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="options">
+      <UniqueIdentifier>{f652ac09-5e05-43b7-a28d-930228fae115}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

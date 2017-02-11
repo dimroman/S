@@ -19,6 +19,10 @@ struct int2
 
 struct uint2
 {
+	uint2(unsigned const x, unsigned const y) : x(x), y(y) {}
+	inline bool operator==(uint2 const other) { return x == other.x && y == other.y; }
+	inline bool operator!=(uint2 const other) { return x != other.x || y != other.y; }
+
 	unsigned x = 0;
 	unsigned y = 0;
 };
@@ -27,12 +31,12 @@ template<typename T>
 struct rectangle
 {
 	rectangle(T const first, T const second) :
-		left_down(std::min(first.x, second.x), std::min(first.y, second.y)),
-		right_up(std::max(first.x, second.x), std::max(first.y, second.y))
+		lower_bound(std::min(first.x, second.x), std::min(first.y, second.y)),
+		upper_bound(std::max(first.x, second.x), std::max(first.y, second.y))
 	{ }
 
-	T left_down;
-	T right_up;
+	T lower_bound;
+	T upper_bound;
 };
 
 inline float to_radians(float const degrees) { return degrees * 3.1415927f / 180.0f; };

@@ -1,7 +1,4 @@
 #include "camera.h"
-#include "options.h"
-
-extern options g_options;
 
 math::float4x4 camera::look_at_right_handed()
 {
@@ -34,14 +31,14 @@ math::float4x4 camera::look_at_right_handed()
 	return result;
 }
 
-math::float4x4 camera::perspective_projection_right_handed() const
+math::float4x4 camera::perspective_projection_right_handed(float const field_of_view, float const aspect_ratio, float const far_plane, float const near_plane) const
 {
 	math::float4x4 result;
 
-	result.m[1][1] = 1 / (float)tan(0.5f * math::to_radians( g_options.field_of_view ));
-	result.m[0][0] = result.m[1][1] / g_options.aspect_ratio();
-	result.m[2][2] = -g_options.far_plane / (g_options.far_plane - g_options.near_plane);
-	result.m[3][2] = -g_options.far_plane * g_options.near_plane / (g_options.far_plane - g_options.near_plane);
+	result.m[1][1] = 1 / (float)tan(0.5f * math::to_radians( field_of_view ));
+	result.m[0][0] = result.m[1][1] / aspect_ratio;
+	result.m[2][2] = -far_plane / (far_plane - near_plane);
+	result.m[3][2] = -far_plane * near_plane / (far_plane - near_plane);
 	result.m[2][3] = -1.0f;
 
 	return result;

@@ -1,10 +1,7 @@
 #include "graphics.h"
-#include "options.h"
 #include "helper_functions.h"
 #include "d3dx12.h"
 #include "render_object_instance_owner.h"
-
-extern options g_options;
 
 UINT graphics::descriptor_size(D3D12_DESCRIPTOR_HEAP_TYPE type)
 {
@@ -23,8 +20,8 @@ void graphics::create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPT
 
 void graphics::increment_handles(D3D12_DESCRIPTOR_HEAP_TYPE const type)
 {
-	m_current_gpu_handle[type].ptr += graphics::descriptor_size(type);
-	m_current_cpu_handle[type].ptr += graphics::descriptor_size(type);
+	m_current_gpu_handle[type].ptr += descriptor_size(type);
+	m_current_cpu_handle[type].ptr += descriptor_size(type);
 }
 
 constant_buffer_data graphics::create_constant_buffer_view(unsigned const buffer_size)
@@ -236,19 +233,106 @@ ID3DBlob* graphics::pixel_shader(wchar_t const* const name)
 	return shader.second.Get();
 }
 
-bool graphics::initialize(HWND main_window_handle)
+void graphics::resize(unsigned const screen_width, unsigned const screen_height)
 {
-	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_depth_stencils) + _countof(m_per_frame_model_transforms) + _countof(m_per_frame_colors));
+	UINT64 const max_fence_value = m_fence_values[(m_current_frame_index + frames_count - 1) % frames_count];
+	ThrowIfFailed(m_command_queue->Signal(m_fence.Get(), max_fence_value));
+	ThrowIfFailed(m_fence->SetEventOnCompletion(max_fence_value, m_fence_event));
+	WaitForSingleObject(m_fence_event, INFINITE);
+	m_fence_values[m_current_frame_index] = max_fence_value + 1;
+
+	for (unsigned i = 0; i < frames_count; ++i)
+	{
+		m_swap_chain_buffers[i].Reset();
+		m_indices_render_targets[i].Reset();
+		m_indices_rtv_readback_resource[i].Reset();
+	}
+	
+	DXGI_SWAP_CHAIN_DESC1 description{};
+	m_swap_chain->GetDesc1(&description);
+	ThrowIfFailed(m_swap_chain->ResizeBuffers(_countof(m_swap_chain_buffers), screen_width, screen_height, description.Format, description.Flags));
+	
+	for (unsigned i = 0; i < frames_count; ++i)
+	{
+		ThrowIfFailed(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(m_swap_chain_buffers[i].GetAddressOf())));
+		m_d3d_device->CreateRenderTargetView(m_swap_chain_buffers[i].Get(), nullptr, m_swap_chain_rtv_cpu_handles[i]);
+	}
+
+	for (unsigned i = 0; i < frames_count; i++)
+	{
+		D3D12_CLEAR_VALUE clear_value;
+		clear_value.Format = indices_render_target_format;
+		std::fill(std::begin(clear_value.Color), std::end(clear_value.Color), 0.0f);
+
+		D3D12_RESOURCE_DESC description{ D3D12_RESOURCE_DIMENSION_TEXTURE2D, 0, screen_width, screen_height, 1, 1, indices_render_target_format,{ 1, 0 }, D3D12_TEXTURE_LAYOUT_UNKNOWN, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET };
+		D3D12_HEAP_PROPERTIES heap_properties{ D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+
+		ThrowIfFailed(m_d3d_device->CreateCommittedResource(
+			&heap_properties,
+			D3D12_HEAP_FLAG_NONE,
+			&description,
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			&clear_value,
+			IID_PPV_ARGS(m_indices_render_targets[i].GetAddressOf()))
+		);
+
+		D3D12_RENDER_TARGET_VIEW_DESC desc{};
+		desc.Format = indices_render_target_format;
+		desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		desc.Texture2D = { 0, 0 };
+		m_d3d_device->CreateRenderTargetView(m_indices_render_targets[i].Get(), &desc, m_indices_rtv_cpu_handles[i]);
+
+		UINT64 const buffer_size = GetRequiredIntermediateSize(m_indices_render_targets[i].Get(), 0, 1);
+		heap_properties = { D3D12_HEAP_TYPE_READBACK, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+
+		ThrowIfFailed(m_d3d_device->CreateCommittedResource(
+			&heap_properties,
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(buffer_size),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&m_indices_rtv_readback_resource[i])));
+	}
+
+	SetWindowLong(m_main_window_handle, GWL_STYLE, screen_width==1920 ? WS_POPUP : WS_OVERLAPPEDWINDOW);
+	SetWindowPos( m_main_window_handle, screen_width==1920 ? HWND_NOTOPMOST : HWND_TOPMOST, 0, 0, screen_width, screen_height, 0);
+	ShowWindow(m_main_window_handle, SW_SHOW);
+	UpdateWindow(m_main_window_handle);
+
+	m_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
+			
+	m_screen_viewport.TopLeftX = 0;
+	m_screen_viewport.TopLeftY = 0;
+	m_screen_viewport.Width = static_cast<float>(screen_width);
+	m_screen_viewport.Height = static_cast<float>(screen_height);
+	m_screen_viewport.MinDepth = 0.0f;
+	m_screen_viewport.MaxDepth = 1.0f;
+	m_scissor_rectangle = { 0, 0, static_cast<LONG>(screen_width), static_cast<LONG>(screen_height) };
+}
+
+void graphics::initialize(unsigned const screen_width, unsigned const screen_height)
+{
+	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_per_frame_model_transforms) + _countof(m_per_frame_colors));
 	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, _countof(m_depth_stencils));
+	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, _countof(m_swap_chain_buffers) + _countof(m_indices_render_targets));
+			
+	WNDCLASS wc{ 0, DefWindowProc, 0, 0, 0, 0, LoadCursor(0, IDC_ARROW), 0, 0, L"MainWnd" };
+	
+	if (!RegisterClass(&wc))
+	{
+		MessageBox(0, L"RegisterClass Failed.", 0, 0);
+		return;
+	}
 
-	for (auto& t : m_swap_chain_buffers)
-		t.preinitialize(this, false, false, true);
-
-	for (auto& t : m_indices_render_targets)
-		t.preinitialize(this, false, false, true);
-
-	for (auto& t : m_depth_stencils)
-		t.preinitialize(this, true, true, false);
+	m_main_window_handle = CreateWindow(L"MainWnd", 0, WS_POPUP, 0, 0, screen_width, screen_height, 0, 0, 0, 0);
+	if (!m_main_window_handle)
+	{
+		MessageBox(0, L"CreateWindow Failed.", 0, 0);
+		return;
+	}
+	
+	ShowWindow(m_main_window_handle, SW_SHOW);
+	UpdateWindow(m_main_window_handle);
 	
 #if defined(DEBUG) || defined(_DEBUG) 
 	// Enable the D3D12 debug layer.
@@ -258,16 +342,7 @@ bool graphics::initialize(HWND main_window_handle)
 		debugController->EnableDebugLayer();
 	}
 #endif
-
-	ComPtr<IDXGIFactory4> dxgi_factory;
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&dxgi_factory)));
-	
-	if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_d3d_device))))
-	{
-		ComPtr<IDXGIAdapter> pWarpAdapter;
-		ThrowIfFailed(dxgi_factory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));
-		ThrowIfFailed(D3D12CreateDevice( pWarpAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_d3d_device)));
-	}
+	ThrowIfFailed(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_d3d_device)));
 	
 	for (UINT i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
 		m_descriptor_sizes[i] = m_d3d_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE(i));
@@ -284,13 +359,17 @@ bool graphics::initialize(HWND main_window_handle)
 	D3D12_COMMAND_QUEUE_DESC queueDesc{ D3D12_COMMAND_LIST_TYPE_DIRECT, 0, D3D12_COMMAND_QUEUE_FLAG_NONE, 0 };
 	ThrowIfFailed(m_d3d_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_command_queue)));
 
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{ (UINT)g_options.screen_width, (UINT)g_options.screen_height, DXGI_FORMAT_R8G8B8A8_UNORM, false, { 1, 0 },
-		DXGI_USAGE_RENDER_TARGET_OUTPUT, frames_count, DXGI_SCALING_STRETCH, DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_ALPHA_MODE_UNSPECIFIED, 0 };	
+	{
+		DXGI_SWAP_CHAIN_DESC1 swapChainDesc{ screen_width, screen_height, DXGI_FORMAT_R8G8B8A8_UNORM, false, { 1, 0 },
+			DXGI_USAGE_RENDER_TARGET_OUTPUT, frames_count, DXGI_SCALING_STRETCH, DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_ALPHA_MODE_UNSPECIFIED, 0 };
 
-	ComPtr<IDXGISwapChain1> swapChain;
-	ThrowIfFailed(dxgi_factory->CreateSwapChainForHwnd( m_command_queue.Get(), main_window_handle, &swapChainDesc, nullptr, nullptr, &swapChain ));
-	ThrowIfFailed(dxgi_factory->MakeWindowAssociation( main_window_handle, DXGI_MWA_NO_ALT_ENTER ));
-	ThrowIfFailed(swapChain.As(&m_swap_chain));
+		ComPtr<IDXGIFactory4> dxgi_factory;
+		ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&dxgi_factory)));
+		ComPtr<IDXGISwapChain1> swapChain;
+		ThrowIfFailed(dxgi_factory->CreateSwapChainForHwnd(m_command_queue.Get(), m_main_window_handle, &swapChainDesc, nullptr, nullptr, &swapChain));
+		ThrowIfFailed(dxgi_factory->MakeWindowAssociation(m_main_window_handle, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES));
+		ThrowIfFailed(swapChain.As(&m_swap_chain));
+	}
 	m_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
 		
 	if (m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] > 0)
@@ -309,35 +388,99 @@ bool graphics::initialize(HWND main_window_handle)
 		ThrowIfFailed(m_command_lists[i]->Close());
 	}
 
-	for (UINT i = 0; i < frames_count; i++)
-		m_swap_chain_buffers[i].initialize_rtv(m_d3d_device.Get(), m_swap_chain.Get(), i);
-
+	for (unsigned i = 0; i < frames_count; i++)
+	{
+		ThrowIfFailed(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(m_swap_chain_buffers[i].GetAddressOf())));
+		m_d3d_device->CreateRenderTargetView(m_swap_chain_buffers[i].Get(), nullptr, current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+		m_swap_chain_rtv_cpu_handles[i] = current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		increment_handles(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	}
+	
 	for (unsigned i = 0; i < frames_count; i++)
 	{
 		D3D12_CLEAR_VALUE clear_value;
 		clear_value.Format = indices_render_target_format;
 		std::fill(std::begin(clear_value.Color), std::end(clear_value.Color), 0.0f);
 
-		m_indices_render_targets[i].initialize(m_d3d_device.Get(), 0, g_options.screen_width, g_options.screen_height, 1, indices_render_target_format, { 1, 0 }, D3D12_TEXTURE_LAYOUT_UNKNOWN, &clear_value, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, L"render_target", i);
-		m_indices_render_targets[i].initialize_rtv(m_d3d_device.Get(), indices_render_target_format);
-		m_indices_render_targets[i].initialize_readback_resource(m_d3d_device.Get());
+		D3D12_RESOURCE_DESC description{ D3D12_RESOURCE_DIMENSION_TEXTURE2D, 0, screen_width, screen_height, 1, 1, indices_render_target_format, { 1, 0 }, D3D12_TEXTURE_LAYOUT_UNKNOWN, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET };		
+		D3D12_HEAP_PROPERTIES heap_properties{ D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+
+		ThrowIfFailed(m_d3d_device->CreateCommittedResource(
+			&heap_properties,
+			D3D12_HEAP_FLAG_NONE,
+			&description,
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			&clear_value,
+			IID_PPV_ARGS(m_indices_render_targets[i].GetAddressOf()))
+		);
+
+		D3D12_RENDER_TARGET_VIEW_DESC desc{};
+		desc.Format = indices_render_target_format;
+		desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		desc.Texture2D = { 0, 0 };
+		m_d3d_device->CreateRenderTargetView(m_indices_render_targets[i].Get(), &desc, current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+		m_indices_rtv_cpu_handles[i] = current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		increment_handles(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+		UINT64 const buffer_size = GetRequiredIntermediateSize(m_indices_render_targets[i].Get(), 0, 1);
+		heap_properties = { D3D12_HEAP_TYPE_READBACK, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+
+		ThrowIfFailed(m_d3d_device->CreateCommittedResource(
+			&heap_properties,
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(buffer_size),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&m_indices_rtv_readback_resource[i])));
 	}
 
 	for (int i = 0; i < frames_count; ++i)
 	{
-		m_depth_stencils[i].initialize(m_d3d_device.Get(), 0, g_options.screen_width, g_options.screen_height, 1, DXGI_FORMAT_R32_TYPELESS, { 1, 0 }, D3D12_TEXTURE_LAYOUT_UNKNOWN,
-			&clear_value(DXGI_FORMAT_D32_FLOAT, D3D12_DEPTH_STENCIL_VALUE{ 1.0f,0 }), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL, L"depth_stencil", i);
-		m_depth_stencils[i].initialize_dsv(m_d3d_device.Get(), DXGI_FORMAT_D32_FLOAT);
-		m_depth_stencils[i].initialize_cbv_srv_uav(m_d3d_device.Get(), DXGI_FORMAT_R32_FLOAT);
+		D3D12_RESOURCE_DESC	description{};
+		description.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		description.Alignment = 0;
+		description.Width = screen_width;
+		description.Height = screen_height;
+		description.DepthOrArraySize = 1;
+		description.MipLevels = 1;
+		description.Format = DXGI_FORMAT_R32_TYPELESS;
+		description.SampleDesc = { 1, 0 };
+		description.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		description.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+		D3D12_HEAP_PROPERTIES heap_properties{};
+		heap_properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		heap_properties.CreationNodeMask = 1;
+		heap_properties.VisibleNodeMask = 1;
+
+		ThrowIfFailed(m_d3d_device->CreateCommittedResource(
+			&heap_properties,
+			D3D12_HEAP_FLAG_NONE,
+			&description,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&clear_value(DXGI_FORMAT_D32_FLOAT, D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0 }),
+			IID_PPV_ARGS(m_depth_stencils[i].GetAddressOf()))
+		);
+		
+		D3D12_DEPTH_STENCIL_VIEW_DESC desc;
+		desc.Format = DXGI_FORMAT_D32_FLOAT;
+		desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		desc.Flags = D3D12_DSV_FLAG_NONE;
+		desc.Texture2D = { 0 };
+		m_d3d_device->CreateDepthStencilView(m_depth_stencils[i].Get(), &desc, current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
+		m_depth_stencil_dsv_cpu_handles[i] = current_cpu_handle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+		increment_handles(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	}
 		
 	m_screen_viewport.TopLeftX = 0;
 	m_screen_viewport.TopLeftY = 0;
-	m_screen_viewport.Width = static_cast<float>(g_options.screen_width);
-	m_screen_viewport.Height = static_cast<float>(g_options.screen_height);
+	m_screen_viewport.Width = static_cast<float>(screen_width);
+	m_screen_viewport.Height = static_cast<float>(screen_height);
 	m_screen_viewport.MinDepth = 0.0f;
 	m_screen_viewport.MaxDepth = 1.0f;
-	m_scissor_rectangle = { 0, 0, g_options.screen_width, g_options.screen_height };
+	m_scissor_rectangle = { 0, 0, static_cast<LONG>(screen_width), static_cast<LONG>(screen_height) };
 
 	initialize_constant_buffers();
 	
@@ -355,8 +498,6 @@ bool graphics::initialize(HWND main_window_handle)
 		ThrowIfFailed(m_fence->SetEventOnCompletion(1, m_fence_event));
 		WaitForSingleObject(m_fence_event, INFINITE);
 	}
-
-	return true;
 }
 
 render_object* graphics::new_render_object(

@@ -13,6 +13,7 @@ enum {
 	a_keyboard_button,
 	s_keyboard_button,
 	d_keyboard_button,
+	resize_keyboard_button,
 	quit_keyboard_button,
 	count
 };
@@ -20,33 +21,35 @@ enum {
 }
 
 class application;
+class options;
 
 struct input
 {
-	void initialize(application* const owner);
+	void initialize(application* const owner, options* const options);
 	void update(float const last_frame_time);
+	void finalize() {}
 private:
-	void move_camera_along_axis_x(POINT const cursor_position, float const last_frame_time, float const direction);
-	void move_camera_along_axis_z(POINT const cursor_position, float const last_frame_time, float const direction);
+	void move_camera_along_axis_x(math::uint2 const cursor_position, float const last_frame_time, float const direction);
+	void move_camera_along_axis_z(math::uint2 const cursor_position, float const last_frame_time, float const direction);
 
-	void on_left_mouse_button_down(POINT const cursor_position, float const last_frame_time);
-	void on_left_mouse_button_up(POINT const cursor_position, float const last_frame_time);
+	void on_left_mouse_button_down(math::uint2 const cursor_position, float const last_frame_time);
+	void left_mouse_button_is_down(math::uint2 const cursor_position, float const last_frame_time);
+	void on_left_mouse_button_up(math::uint2 const cursor_position, float const last_frame_time);
 
-	void quit(POINT const cursor_position, float const last_frame_time);
+	void resize(math::uint2 const cursor_position, float const last_frame_time);
+	void quit(math::uint2 const cursor_position, float const last_frame_time);
 
 private:
 	application* m_owner = nullptr;
-	bool m_mouse_is_down = false;
+	options* m_options = nullptr;
 
-	float m_last_dx = 0;
-	float m_last_dy = 0;
-	POINT m_last_mouse_left_button_down_position{ 0, 0 };
-	POINT m_last_mouse_position{ 0, 0 };
+	math::uint2 m_last_mouse_left_button_down_position{ unsigned(-1), unsigned(-1) };
+	math::uint2 m_last_mouse_position{ 0, 0 };
 
 	unsigned char m_game_key_bindings[game_key::count]{ 0 };
 	unsigned char m_game_key_states[game_key::count]{ 0 };
 
-	using owner_callback_type = std::function<void(POINT const, float const)>;
+	using owner_callback_type = std::function<void(math::uint2 const, float const)>;
 	owner_callback_type m_game_key_is_down_callbacks[game_key::count];
 	owner_callback_type m_game_key_down_callbacks[game_key::count];
 	owner_callback_type m_game_key_up_callbacks[game_key::count];

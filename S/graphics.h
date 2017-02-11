@@ -4,8 +4,6 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <dxgi1_4.h>
-#include "texture.h"
-#include "sampler.h"
 #include "math.h"
 #include "render_object.h"
 #include "global_defines.h"
@@ -20,8 +18,9 @@ class render_object_instance_owner;
 class graphics
 {
 public:
-			bool						initialize				(HWND main_window_handle);
-			void						run						(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed);
+			void						initialize				(unsigned const screen_width, unsigned const screen_height);
+			void						resize					(unsigned const screen_width, unsigned const screen_height);
+			void						run						(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed, unsigned const screen_width, unsigned const screen_height);
 			void						finalize				();
 
 			UINT						descriptor_size			(D3D12_DESCRIPTOR_HEAP_TYPE type);
@@ -33,8 +32,8 @@ public:
 
 	inline	void						increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE const type, unsigned const value) { m_descriptor_heap_sizes[type] += value; }
 
-			void						select_object			(math::rectangle<math::int2> const selection);
-			void						highlight_object		(math::rectangle<math::int2> const selection);
+			void						select_object			(math::rectangle<math::uint2> const selection, unsigned const screen_width);
+			void						highlight_object		(math::rectangle<math::uint2> const selection, unsigned const screen_width);
 			void						remove_all_highlighting	();
 			void						remove_all_selection	();
 			render_object*				new_render_object(
@@ -90,15 +89,20 @@ private:
 			D3D12_INDEX_BUFFER_VIEW*	index_buffer_view_impl(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
 			
 private:
+	HWND								m_main_window_handle;
 
 	ComPtr<ID3D12Device>				m_d3d_device;
 	ComPtr<ID3D12CommandAllocator>		m_bundle_allocator;
 
 	ComPtr<IDXGISwapChain3>				m_swap_chain;
 	unsigned							m_current_frame_index = 0;
-	texture								m_swap_chain_buffers[frames_count];
-	texture								m_indices_render_targets[frames_count];
-	texture								m_depth_stencils[frames_count];
+	D3D12_CPU_DESCRIPTOR_HANDLE			m_swap_chain_rtv_cpu_handles[frames_count];
+	ComPtr<ID3D12Resource>				m_swap_chain_buffers[frames_count];
+	D3D12_CPU_DESCRIPTOR_HANDLE			m_indices_rtv_cpu_handles[frames_count];
+	ComPtr<ID3D12Resource>				m_indices_render_targets[frames_count];
+	ComPtr<ID3D12Resource>				m_indices_rtv_readback_resource[frames_count];
+	D3D12_CPU_DESCRIPTOR_HANDLE			m_depth_stencil_dsv_cpu_handles[frames_count];
+	ComPtr<ID3D12Resource>				m_depth_stencils[frames_count];
 	unsigned							m_frame_id = 0;
 
 	ComPtr<ID3D12Fence>					m_fence;
@@ -118,8 +122,8 @@ private:
 	math::float4						m_colors[render_object_instances_count];
 	unsigned							m_render_object_instances_count = 0;
 
-	bool m_selected_object_instances[render_object_instances_count];
-	bool m_highlighted_object_instances[render_object_instances_count];
+	bool m_selected_object_instances[render_object_instances_count]{ false };
+	bool m_highlighted_object_instances[render_object_instances_count]{ false };
 		
 	D3D12_VIEWPORT	m_screen_viewport;
 	D3D12_RECT		m_scissor_rectangle;
