@@ -107,9 +107,6 @@
     <Filter Include="logic">
       <UniqueIdentifier>{22b29dbd-f569-4650-a2be-185fe4581b70}</UniqueIdentifier>
     </Filter>
-    <Filter Include="logic\logic_object">
-      <UniqueIdentifier>{112338a8-c557-4dd0-ab0e-66eb6762a688}</UniqueIdentifier>
-    </Filter>
     <Filter Include="logic\logic_world">
       <UniqueIdentifier>{1d110a89-a8b0-481b-aaac-26962f543e9a}</UniqueIdentifier>
     </Filter>

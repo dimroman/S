@@ -16,8 +16,6 @@
 
 using Microsoft::WRL::ComPtr;
 
-class logic;
-
 class constant_buffer_data
 {
 public:
@@ -38,7 +36,7 @@ private:
 class graphics
 {
 public:
-										graphics				(logic* const logic, unsigned const screen_width, unsigned const screen_height);
+										graphics				(unsigned const screen_width, unsigned const screen_height);
 										~graphics				();
 			void						resize					(unsigned const screen_width, unsigned const screen_height);
 			void						run						(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed, unsigned const screen_width, unsigned const screen_height);
@@ -48,10 +46,8 @@ public:
 	inline	D3D12_GPU_DESCRIPTOR_HANDLE current_gpu_handle		(D3D12_DESCRIPTOR_HEAP_TYPE const type) const { return m_current_gpu_handle[type]; }
 			void						increment_handles		(D3D12_DESCRIPTOR_HEAP_TYPE const type);
 
-	inline	void						increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE const type, unsigned const value) { m_descriptor_heap_sizes[type] += value; }
-
-			void						select_object			(math::rectangle<math::uint2> const selection, unsigned const screen_width);
-			void						highlight_object		(math::rectangle<math::uint2> const selection, unsigned const screen_width);
+	inline	void						select_object			(math::rectangle<math::uint2> const selection, unsigned const screen_width) { update_object_selection_impl(selection, screen_width, m_selected_object_instances); }
+	inline	void						highlight_object		(math::rectangle<math::uint2> const selection, unsigned const screen_width) { update_object_selection_impl(selection, screen_width, m_highlighted_object_instances); }
 			void						remove_all_highlighting	();
 			void						remove_all_selection	();
 			void						new_render_object(
@@ -100,13 +96,15 @@ public:
 			void						update_view_projection_transform(math::float4x4 const& view_projection_transform, unsigned const current_frame_index);
 			
 private:
-			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask);
+			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
 
 			void						update					(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed);
 			void						initialize_constant_buffers();
 
 			unsigned					vertex_buffer_view_id_impl(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
 			unsigned					index_buffer_view_id_impl(void const* const indices, unsigned const indices_size, DXGI_FORMAT const format);
+
+			void						update_object_selection_impl(math::rectangle<math::uint2> const selection, unsigned const screen_width, bool* const current_selection_states);
 			
 private:
 	HWND								m_main_window_handle;
@@ -116,11 +114,16 @@ private:
 
 	ComPtr<IDXGISwapChain3>				m_swap_chain;
 	unsigned							m_current_frame_index = 0;
+
+	std::vector<ComPtr<ID3D12Resource>> m_resources;
 	D3D12_CPU_DESCRIPTOR_HANDLE			m_swap_chain_rtv_cpu_handles[frames_count];
 	ComPtr<ID3D12Resource>				m_swap_chain_buffers[frames_count];
+
 	D3D12_CPU_DESCRIPTOR_HANDLE			m_indices_rtv_cpu_handles[frames_count];
 	ComPtr<ID3D12Resource>				m_indices_render_targets[frames_count];
+
 	ComPtr<ID3D12Resource>				m_indices_rtv_readback_resource[frames_count];
+
 	D3D12_CPU_DESCRIPTOR_HANDLE			m_depth_stencil_dsv_cpu_handles[frames_count];
 	ComPtr<ID3D12Resource>				m_depth_stencils[frames_count];
 	unsigned							m_frame_id = 0;
@@ -136,8 +139,6 @@ private:
 
 	std::vector<render_object>			m_render_objects;
 
-	logic* const						m_logic;
-
 	math::float4x4						m_model_transforms[render_object_instances_count];
 	math::float4						m_colors[render_object_instances_count];
 	bool								m_selected_object_instances[render_object_instances_count]{ false };
@@ -150,7 +151,6 @@ private:
 	D3D12_RECT		m_scissor_rectangle;
 		
 	ComPtr<ID3D12DescriptorHeap>	m_descriptor_heaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
-	unsigned int					m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 
 	D3D12_CPU_DESCRIPTOR_HANDLE m_current_cpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 	D3D12_GPU_DESCRIPTOR_HANDLE m_current_gpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
@@ -168,7 +168,9 @@ private:
 	constant_buffer_data m_per_frame_model_transforms[frames_count];
 	constant_buffer_data m_per_frame_colors[frames_count];
 
-	DXGI_FORMAT const indices_render_target_format = DXGI_FORMAT_R32_UINT;
+	DXGI_FORMAT const back_buffer_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT const indices_render_target_format = DXGI_FORMAT_R16_UINT;
+	using indices_render_target_type = unsigned short;
 
 private:
 

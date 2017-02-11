@@ -20,13 +20,14 @@ enum {
 
 }
 
-class application;
+class camera;
 class options;
+class graphics;
 
 struct input
 {
-		input(application* const owner, options* const options);
-	void update(float const last_frame_time);
+		input(camera* const camera, options* const options, graphics* const graphics);
+	void update(float const last_frame_time, bool& need_to_quit);
 private:
 	void move_camera_along_axis_x(math::uint2 const cursor_position, float const last_frame_time, float const direction);
 	void move_camera_along_axis_z(math::uint2 const cursor_position, float const last_frame_time, float const direction);
@@ -39,8 +40,9 @@ private:
 	void quit(math::uint2 const cursor_position, float const last_frame_time);
 
 private:
-	application* m_owner = nullptr;
-	options* m_options = nullptr;
+	camera* const m_camera = nullptr;
+	graphics* const m_graphics = nullptr;
+	options* const m_options = nullptr;
 
 	math::uint2 m_last_mouse_left_button_down_position{ unsigned(-1), unsigned(-1) };
 	math::uint2 m_last_mouse_position{ 0, 0 };
@@ -54,6 +56,8 @@ private:
 	owner_callback_type m_game_key_up_callbacks[game_key::count];
 
 	BYTE m_virtual_key_states[256];
+
+	bool m_need_to_quit = false;
 };
 
 #endif // #ifndef INPUT_H_INCLUDED

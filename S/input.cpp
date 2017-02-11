@@ -1,7 +1,8 @@
 #include "input.h"
 #include <Windows.h>
-#include "application.h"
+#include "camera.h"
 #include "options.h"
+#include "graphics.h"
 
 enum {
 	virtual_key_left_mouse_button = 0x01,
@@ -196,12 +197,12 @@ enum {
 
 void input::move_camera_along_axis_x(math::uint2 const cursor_position, float const last_frame_time, float const direction)
 {
-	m_owner->move_camera_along_axis_x(last_frame_time*direction);
+	//m_camera->move_x(last_frame_time*direction);
 }
 
 void input::move_camera_along_axis_z(math::uint2 const cursor_position, float const last_frame_time, float const direction)
 {
-	m_owner->move_camera_along_axis_z(last_frame_time*direction);
+	m_camera->move_z(last_frame_time*direction);
 }
 
 void input::on_left_mouse_button_down(math::uint2 const cursor_position, float const last_frame_time)
@@ -214,31 +215,32 @@ void input::left_mouse_button_is_down(math::uint2 const cursor_position, float c
 	if (cursor_position.x != m_last_mouse_position.x)
 	{
 		float const dx = math::to_radians(0.01f*static_cast<float>(cursor_position.x - m_last_mouse_position.x));
-		m_owner->rotate_camera_around_up_direction(-dx);
+		//m_camera->rotate_around_up(-dx);
 	}
 	if (cursor_position.y != m_last_mouse_position.y)
 	{
 		float const dy = math::to_radians(0.01f*static_cast<float>(cursor_position.y - m_last_mouse_position.y));
-		m_owner->rotate_camera_around_axis_x(dy);
+		//m_camera->rotate_around_x(dy);
 	}
 
 	if (m_last_mouse_left_button_down_position.x != unsigned(-1) && m_last_mouse_left_button_down_position.y != unsigned(-1))
 	{
 		math::rectangle<math::uint2> const selection(cursor_position, m_last_mouse_left_button_down_position);
-		m_owner->highlight_object(selection);
+		m_graphics->highlight_object(selection, m_options->screen_width());
 	}
 }
 
 void input::on_left_mouse_button_up(math::uint2 const cursor_position, float const last_frame_time)
 {
 	math::rectangle<math::uint2> const selection(cursor_position, m_last_mouse_left_button_down_position);
-	m_owner->select_object(selection);
-	m_owner->remove_all_highlighting();
+	m_graphics->select_object(selection, m_options->screen_width());
+	m_graphics->remove_all_highlighting();
 }
 
-input::input(application* const owner, options* const options) :
-	m_owner(owner),
-	m_options(options)
+input::input(camera* const camera, options* const options, graphics* const graphics) :
+	m_camera(camera),
+	m_options(options),
+	m_graphics(graphics)
 {
 	m_game_key_bindings[game_key::left_mouse_button] = virtual_key_left_mouse_button;
 	m_game_key_bindings[game_key::w_keyboard_button] = virtual_key_w;
@@ -261,7 +263,7 @@ input::input(application* const owner, options* const options) :
 	m_game_key_up_callbacks[game_key::left_mouse_button] = std::bind(&input::on_left_mouse_button_up, this, std::placeholders::_1, std::placeholders::_2);
 }
 
-void input::update(float const last_frame_time)
+void input::update(float const last_frame_time, bool& need_to_quit)
 {
 	POINT point;
 	BOOL const result = GetCursorPos(&point);
@@ -297,6 +299,7 @@ void input::update(float const last_frame_time)
 	}
 
 	m_last_mouse_position = cursor_position;
+	need_to_quit = m_need_to_quit;
 }
 
 void input::resize(math::uint2 const cursor_position, float const last_frame_time)
@@ -306,5 +309,5 @@ void input::resize(math::uint2 const cursor_position, float const last_frame_tim
 
 void input::quit(math::uint2 const cursor_position, float const last_frame_time)
 {
-	m_owner->need_to_quit();
+	m_need_to_quit = true;
 }

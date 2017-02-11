@@ -16,30 +16,13 @@ class application
 {
 public:
 	application();
-	~application();
 	void run();
-
-	void select_object	(math::rectangle<math::uint2> const selection);
-	void highlight_object(math::rectangle<math::uint2> const selection);
-	void remove_all_highlighting();
-	void remove_all_selection();
-
-	void move_camera_along_axis_x(float const value);
-	void move_camera_along_axis_z(float const value);
-
-	void rotate_camera_around_axis_x(float const value);
-	void rotate_camera_around_up_direction(float const value);
-
-	inline void need_to_quit() { m_quit = true; }
-
 private:
 	options				m_options;
 	graphics			m_graphics;
+	camera				m_camera;
 	input				m_input;
 	logic				m_logic;
-	camera				m_camera;
-
-	bool				m_quit = false;
 };
 
 

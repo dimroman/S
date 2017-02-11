@@ -1,12 +1,10 @@
 #include "graphics.h"
 #include "helper_functions.h"
 #include "d3dx12.h"
-#include "logic.h"
 
-
-void graphics::create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, UINT node_mask)
+void graphics::create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
 {
-	D3D12_DESCRIPTOR_HEAP_DESC heap_desc{ type, num_descriptors, flags, node_mask };
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc{ type, num_descriptors, flags, 0 };
 	ThrowIfFailed(device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(m_descriptor_heaps[type].GetAddressOf())));
 
 	m_current_gpu_handle[type] = m_descriptor_heaps[type]->GetGPUDescriptorHandleForHeapStart();
@@ -52,8 +50,9 @@ constant_buffer_data graphics::create_constant_buffer_view(unsigned const buffer
 
 void graphics::initialize_constant_buffers()
 {
+	D3D12_HEAP_PROPERTIES heap_properties{ D3D12_HEAP_TYPE_UPLOAD, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
 	m_d3d_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&heap_properties,
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(upload_buffer_size),
 		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
@@ -74,7 +73,7 @@ void graphics::initialize_constant_buffers()
 
 	struct model_transform_constants
 	{
-		math::float4x4 model_view_projections[render_object_instances_count];
+		math::float4x4 model_transforms[render_object_instances_count];
 	};
 
 	for (unsigned i = 0; i < frames_count; ++i)
@@ -115,7 +114,7 @@ unsigned graphics::pipeline_state_id(
 	pso_desc.DepthStencilState = depth_stencil_desc;
 	pso_desc.SampleMask = UINT_MAX;
 	pso_desc.NumRenderTargets = 2;
-	pso_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	pso_desc.RTVFormats[0] = back_buffer_format;
 	pso_desc.RTVFormats[1] = indices_render_target_format;
 	pso_desc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	pso_desc.SampleDesc.Count = 1;
@@ -141,16 +140,22 @@ unsigned graphics::root_signature_id()
 		{ D3D12_DESCRIPTOR_RANGE_TYPE_CBV,		2, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC,						D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
 	};
 
-	CD3DX12_ROOT_PARAMETER1 root_parameters[2];
-	root_parameters[0].InitAsConstants(1, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
-	root_parameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
+	D3D12_ROOT_PARAMETER1 root_parameters[2];
+	root_parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	root_parameters[0].Constants = { 0, 0, 1 };
+	root_parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
-	root_signature_desc.Init_1_1(_countof(root_parameters), root_parameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	root_parameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	root_parameters[1].DescriptorTable = { 1, &ranges[0] };
+	root_parameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	D3D12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_description;
+	root_signature_description.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
+	root_signature_description.Desc_1_1 = { _countof(root_parameters), root_parameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT };
 
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
-	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&root_signature_desc, featureData.HighestVersion, &signature, &error), error);
+	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&root_signature_description, featureData.HighestVersion, &signature, &error), error);
 	m_root_signatures.push_back(0);
 	ThrowIfFailed(m_d3d_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_root_signatures.back())));
 	
@@ -266,6 +271,7 @@ void graphics::resize(unsigned const screen_width, unsigned const screen_height)
 	
 	for (unsigned i = 0; i < frames_count; ++i)
 	{
+		m_resources.push_back(0);
 		ThrowIfFailed(m_swap_chain->GetBuffer(i, IID_PPV_ARGS(m_swap_chain_buffers[i].GetAddressOf())));
 		m_d3d_device->CreateRenderTargetView(m_swap_chain_buffers[i].Get(), nullptr, m_swap_chain_rtv_cpu_handles[i]);
 	}
@@ -322,13 +328,8 @@ void graphics::resize(unsigned const screen_width, unsigned const screen_height)
 	m_scissor_rectangle = { 0, 0, static_cast<LONG>(screen_width), static_cast<LONG>(screen_height) };
 }
 
-graphics::graphics(logic* const logic, unsigned const screen_width, unsigned const screen_height) :
-	m_logic(logic)
-{
-	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, _countof(m_per_frame_model_transforms) + _countof(m_per_frame_colors));
-	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, _countof(m_depth_stencils));
-	increase_descriptor_heap_size(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, _countof(m_swap_chain_buffers) + _countof(m_indices_render_targets));
-				
+graphics::graphics(unsigned const screen_width, unsigned const screen_height)
+{				
 	WNDCLASS wc{ 0, DefWindowProc, 0, 0, 0, 0, LoadCursor(0, IDC_ARROW), 0, 0, L"MainWnd" };
 	
 	if (!RegisterClass(&wc))
@@ -370,7 +371,7 @@ graphics::graphics(logic* const logic, unsigned const screen_width, unsigned con
 	ThrowIfFailed(m_d3d_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_command_queue)));
 
 	{
-		DXGI_SWAP_CHAIN_DESC1 swapChainDesc{ screen_width, screen_height, DXGI_FORMAT_R8G8B8A8_UNORM, false, { 1, 0 },
+		DXGI_SWAP_CHAIN_DESC1 swapChainDesc{ screen_width, screen_height, back_buffer_format, false, { 1, 0 },
 			DXGI_USAGE_RENDER_TARGET_OUTPUT, frames_count, DXGI_SCALING_STRETCH, DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_ALPHA_MODE_UNSPECIFIED, 0 };
 
 		ComPtr<IDXGIFactory4> dxgi_factory;
@@ -382,14 +383,10 @@ graphics::graphics(logic* const logic, unsigned const screen_width, unsigned con
 	}
 	m_current_frame_index = m_swap_chain->GetCurrentBackBufferIndex();
 		
-	if (m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] > 0)
-		create_descriptor_heap( m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 );
-	if (m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER] > 0)
-		create_descriptor_heap(m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER], D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0);
-	if (m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_RTV] > 0)
-		create_descriptor_heap(m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_RTV], D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0);
-	if (m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_DSV] > 0)
-		create_descriptor_heap(m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_descriptor_heap_sizes[D3D12_DESCRIPTOR_HEAP_TYPE_DSV], D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0);
+	create_descriptor_heap(m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 8, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	create_descriptor_heap(m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	create_descriptor_heap(m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 8, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+	create_descriptor_heap(m_d3d_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 4, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 	
 	for (UINT i = 0; i < frames_count; i++)
 	{
@@ -458,12 +455,7 @@ graphics::graphics(logic* const logic, unsigned const screen_width, unsigned con
 		description.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		description.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-		D3D12_HEAP_PROPERTIES heap_properties{};
-		heap_properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-		heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-		heap_properties.CreationNodeMask = 1;
-		heap_properties.VisibleNodeMask = 1;
+		D3D12_HEAP_PROPERTIES heap_properties{ D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
 
 		ThrowIfFailed(m_d3d_device->CreateCommittedResource(
 			&heap_properties,
@@ -508,6 +500,18 @@ graphics::graphics(logic* const logic, unsigned const screen_width, unsigned con
 		ThrowIfFailed(m_fence->SetEventOnCompletion(1, m_fence_event));
 		WaitForSingleObject(m_fence_event, INFINITE);
 	}
+}
+
+graphics::~graphics()
+{
+	UINT64 const max_fence_value = m_fence_values[(m_current_frame_index + frames_count - 1) % frames_count];
+	ThrowIfFailed(m_command_queue->Signal(m_fence.Get(), max_fence_value));
+	ThrowIfFailed(m_fence->SetEventOnCompletion(max_fence_value, m_fence_event));
+	WaitForSingleObject(m_fence_event, INFINITE);
+
+	m_swap_chain->SetFullscreenState(FALSE, nullptr);
+
+	CloseHandle(m_fence_event);
 }
 
 void graphics::new_render_object(

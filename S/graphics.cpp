@@ -2,24 +2,6 @@
 #include "helper_functions.h"
 #include "d3dx12.h"
 #include <process.h>
-#include "logic.h"
-
-bool operator!=(D3D12_VERTEX_BUFFER_VIEW const left, D3D12_VERTEX_BUFFER_VIEW const right)
-{
-	return left.BufferLocation != right.BufferLocation || left.SizeInBytes != right.SizeInBytes || left.StrideInBytes != right.StrideInBytes;
-}
-
-graphics::~graphics()
-{
-	UINT64 const max_fence_value = m_fence_values[(m_current_frame_index + frames_count - 1) % frames_count];
-	ThrowIfFailed(m_command_queue->Signal(m_fence.Get(), max_fence_value));
-	ThrowIfFailed(m_fence->SetEventOnCompletion(max_fence_value, m_fence_event));
-	WaitForSingleObject(m_fence_event, INFINITE);
-
-	m_swap_chain->SetFullscreenState(FALSE, nullptr);
-
-	CloseHandle(m_fence_event);
-}
 
 void graphics::update_model_transforms(unsigned const current_frame_index)
 {
@@ -107,7 +89,7 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	D3D12_TEXTURE_COPY_LOCATION destination;
 	destination.pResource = m_indices_rtv_readback_resource[m_current_frame_index].Get();
 	destination.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-	destination.PlacedFootprint = { 0, { indices_render_target_format, screen_width, screen_height, 1, screen_width*sizeof(UINT) } };
+	destination.PlacedFootprint = { 0, { indices_render_target_format, screen_width, screen_height, 1, screen_width*sizeof(indices_render_target_type) } };
 
 	D3D12_TEXTURE_COPY_LOCATION source;
 	source.pResource = m_indices_render_targets[m_current_frame_index].Get();
@@ -140,67 +122,35 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	m_fence_values[m_current_frame_index] = max_fence_value + 1;
 }
 
-void graphics::select_object(math::rectangle<math::uint2> const selection, unsigned const screen_width)
-{	
-	bool selected_object_instances[render_object_instances_count]{ false };
-
-	void* data;
-	D3D12_RANGE const read_range{ 0, 0 };
-	ThrowIfFailed(m_indices_rtv_readback_resource[m_current_frame_index]->Map(0, &read_range, &data));
-	unsigned const* const ids = static_cast<unsigned*>(data);
-	for (unsigned y = selection.lower_bound.y; y <= selection.upper_bound.y; ++y)
-	{
-		unsigned const start_index = selection.lower_bound.x + y * screen_width;
-		unsigned const end_index = selection.upper_bound.x + y * screen_width + 1;
-		SIZE_T const begin = start_index * sizeof(unsigned);
-		SIZE_T const end = end_index * sizeof(unsigned);
-		
-		for (int i = start_index, n = end_index; i < n; ++i)
-		{
-			unsigned const id = ids[i];
-			selected_object_instances[id] = true;
-		}
-	}
-	m_indices_rtv_readback_resource[m_current_frame_index]->Unmap(0, nullptr);
-
-	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
-	{
-		if (selected_object_instances[i] == m_selected_object_instances[i])
-			continue;
-		m_selected_object_instances[i] = selected_object_instances[i];
-		m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
-	}
-}
-
-void graphics::highlight_object(math::rectangle<math::uint2> const selection, unsigned const screen_width)
+void graphics::update_object_selection_impl(math::rectangle<math::uint2> const selection, unsigned const screen_width, bool* const current_selection_states)
 {
-	bool highlighted_object_instances[render_object_instances_count]{ false };
-	
+	bool states[render_object_instances_count]{ false };
+
 	void* data;
 	D3D12_RANGE const read_range{ 0, 0 };
 	ThrowIfFailed(m_indices_rtv_readback_resource[m_current_frame_index]->Map(0, &read_range, &data));
-	unsigned const* const ids = static_cast<unsigned*>(data);
-	for (unsigned y = selection.lower_bound.y; y <= selection.upper_bound.y; ++y)
+	auto const* const ids = static_cast<indices_render_target_type const* const>(data);
+	unsigned const step = 10;
+	for (unsigned y = selection.lower_bound.y; y <= selection.upper_bound.y; y += step)
 	{
 		unsigned const start_index = selection.lower_bound.x + y * screen_width;
 		unsigned const end_index = selection.upper_bound.x + y * screen_width;
-		SIZE_T const begin = start_index * sizeof(unsigned);
-		SIZE_T const end = end_index * sizeof(unsigned);
 
-		for (int i = start_index, n = end_index; i < n; ++i)
+		for (unsigned i = start_index, n = end_index; i <= n; i += step)
 		{
-			unsigned const id = ids[i];
-			highlighted_object_instances[id] = true;
+			auto const id = ids[i];
+			states[id] = true;
 		}
 	}
 	m_indices_rtv_readback_resource[m_current_frame_index]->Unmap(0, nullptr);
 
 	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
 	{
-		if (highlighted_object_instances[i] == m_highlighted_object_instances[i])
-			continue;
-		m_highlighted_object_instances[i] = highlighted_object_instances[i];
-		m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
+		if (states[i] != current_selection_states[i])
+		{
+			current_selection_states[i] = states[i];
+			m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
+		}
 	}
 }
 

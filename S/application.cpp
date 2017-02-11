@@ -6,74 +6,30 @@ StepTimer g_timer;
 
 application::application() :
 	m_options(&m_graphics),
-	m_graphics(&m_logic, m_options.screen_width(), m_options.screen_height()),
+	m_graphics(m_options.screen_width(), m_options.screen_height()),
 	m_camera({ 0.0f, 0.0f, 0.0f }),
 	m_logic(m_graphics),
-	m_input(this, &m_options)
+	m_input(&m_camera, &m_options, &m_graphics)
 {
 
-}
-
-application::~application()
-{
-
-}
-
-void application::select_object(math::rectangle<math::uint2> const selection)
-{
-	m_graphics.select_object(selection, m_options.screen_width());
-}
-
-void application::highlight_object(math::rectangle<math::uint2> const selection)
-{
-	m_graphics.highlight_object(selection, m_options.screen_width());
-}
-
-void application::remove_all_highlighting()
-{
-	m_graphics.remove_all_highlighting();
-}
-
-void application::remove_all_selection()
-{
-	m_graphics.remove_all_selection();
-}
-
-void application::move_camera_along_axis_x(float const value)
-{
-	//m_camera.move_x(value);
-}
-
-void application::move_camera_along_axis_z(float const value)
-{
-	m_camera.move_z(value);
-}
-
-void application::rotate_camera_around_axis_x(float const value)
-{
-	//m_camera.rotate_around_x(value);
-}
-
-void application::rotate_camera_around_up_direction(float const value)
-{
-	//m_camera.rotate_around_up(value);
 }
 
 void application::run()
 {		
-	static MSG msg;
-	static unsigned frames_count = 0;
-	static float total_frame_time = 0.0f;
-	static std::wstring fps_text;
+	MSG msg;
+	unsigned frames_count = 0;
+	float total_frame_time = 0.0f;
+	std::wstring fps_text;
 	
-	while (!m_quit)
+	bool quit = false;
+	while (!quit)
 	{
 		while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{}
 		g_timer.Tick(NULL);
 		float const last_frame_time = static_cast<float>(g_timer.GetElapsedSeconds());
 
-		m_input.update(last_frame_time);
+		m_input.update(last_frame_time, quit);
 		m_graphics.run(
 			last_frame_time, 
 			m_camera.look_at_right_handed(), 
