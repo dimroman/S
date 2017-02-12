@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="application.cpp">
       <Filter>application</Filter>
@@ -33,13 +32,15 @@
     <ClCompile Include="options.cpp">
       <Filter>options</Filter>
     </ClCompile>
-    <ClCompile Include="graphics_callbacks.cpp">
-      <Filter>graphics</Filter>
+    <ClCompile Include="input.cpp">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="storage.cpp">
+      <Filter>storage</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="helper_functions.h" />
-    <ClInclude Include="input.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="application.h">
       <Filter>application</Filter>
@@ -75,8 +76,11 @@
     <ClInclude Include="options.h">
       <Filter>options</Filter>
     </ClInclude>
-    <ClInclude Include="graphics_callbacks.h">
-      <Filter>graphics</Filter>
+    <ClInclude Include="input.h">
+      <Filter>input</Filter>
+    </ClInclude>
+    <ClInclude Include="storage.h">
+      <Filter>storage</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +125,12 @@
     </Filter>
     <Filter Include="options">
       <UniqueIdentifier>{f652ac09-5e05-43b7-a28d-930228fae115}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="input">
+      <UniqueIdentifier>{e19b24a8-b984-4994-93e4-dc0a08c4df99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="storage">
+      <UniqueIdentifier>{acf86d2b-3cfd-48e9-a107-312026ea9065}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

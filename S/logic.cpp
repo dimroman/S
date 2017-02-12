@@ -1,7 +1,7 @@
 #include "logic.h"
 
-logic::logic(graphics& graphics) :
-	m_field(&graphics)
+logic::logic(storage* const storage, graphics& graphics) :
+	m_field(storage, &graphics)
 {
 
 }

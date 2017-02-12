@@ -12,9 +12,10 @@
 #include "assets.h"
 #include <vector>
 #include <map>
-#include "graphics_callbacks.h"
 
 using Microsoft::WRL::ComPtr;
+
+class storage;
 
 class constant_buffer_data
 {
@@ -36,18 +37,18 @@ private:
 class graphics
 {
 public:
-										graphics				(unsigned const screen_width, unsigned const screen_height);
+										graphics				(storage* const storage, unsigned const screen_width, unsigned const screen_height);
 										~graphics				();
 			void						resize					(unsigned const screen_width, unsigned const screen_height);
-			void						run						(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed, unsigned const screen_width, unsigned const screen_height);
+			void						update					(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed);
+			void						run						(unsigned const screen_width, unsigned const screen_height);
 			
-	inline	ID3D12Device*				device					( ) const { return m_d3d_device.Get(); }
 	inline	D3D12_CPU_DESCRIPTOR_HANDLE current_cpu_handle		(D3D12_DESCRIPTOR_HEAP_TYPE const type) const { return m_current_cpu_handle[type]; }
 	inline	D3D12_GPU_DESCRIPTOR_HANDLE current_gpu_handle		(D3D12_DESCRIPTOR_HEAP_TYPE const type) const { return m_current_gpu_handle[type]; }
 			void						increment_handles		(D3D12_DESCRIPTOR_HEAP_TYPE const type);
 
-	inline	void						select_object			(math::rectangle<math::uint2> const selection, unsigned const screen_width) { update_object_selection_impl(selection, screen_width, m_selected_object_instances); }
-	inline	void						highlight_object		(math::rectangle<math::uint2> const selection, unsigned const screen_width) { update_object_selection_impl(selection, screen_width, m_highlighted_object_instances); }
+			void						select_object			(math::rectangle<math::uint2> const selection, unsigned const screen_width);
+			void						highlight_object		(math::rectangle<math::uint2> const selection, unsigned const screen_width);
 			void						remove_all_highlighting	();
 			void						remove_all_selection	();
 			void						new_render_object(
@@ -57,10 +58,7 @@ public:
 											unsigned const instance_vertex_buffer_view_id,
 											unsigned const index_buffer_view_id,
 											D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-											math::float4x4 const* const model_transforms,
-											math::float4 const* const colors,
-											unsigned const instances_count,
-											selection_updated_callback_type selection_updated_callback
+											unsigned const instances_count
 										);
 
 			constant_buffer_data		create_constant_buffer_view(unsigned const buffer_size);
@@ -98,7 +96,6 @@ public:
 private:
 			void						create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
 
-			void						update					(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed);
 			void						initialize_constant_buffers();
 
 			unsigned					vertex_buffer_view_id_impl(void const* const vertices, unsigned const vertices_size, unsigned const vertex_size);
@@ -108,6 +105,7 @@ private:
 			
 private:
 	HWND								m_main_window_handle;
+	storage* const						m_storage;
 
 	ComPtr<ID3D12Device>				m_d3d_device;
 	ComPtr<ID3D12CommandAllocator>		m_bundle_allocator;
@@ -138,22 +136,14 @@ private:
 	ComPtr<ID3D12GraphicsCommandList>	m_command_lists[frames_count];
 
 	std::vector<render_object>			m_render_objects;
-
-	math::float4x4						m_model_transforms[render_object_instances_count];
-	math::float4						m_colors[render_object_instances_count];
-	bool								m_selected_object_instances[render_object_instances_count]{ false };
-	bool								m_highlighted_object_instances[render_object_instances_count]{ false };
-	selection_updated_callback_type		m_selection_updated_callbacks[render_object_instances_count];
-	unsigned							m_render_object_instances_count = 0;
-
 		
-	D3D12_VIEWPORT	m_screen_viewport;
-	D3D12_RECT		m_scissor_rectangle;
+	D3D12_VIEWPORT						m_screen_viewport;
+	D3D12_RECT							m_scissor_rectangle;
 		
-	ComPtr<ID3D12DescriptorHeap>	m_descriptor_heaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+	ComPtr<ID3D12DescriptorHeap>		m_descriptor_heaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
 
-	D3D12_CPU_DESCRIPTOR_HANDLE m_current_cpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
-	D3D12_GPU_DESCRIPTOR_HANDLE m_current_gpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
+	D3D12_CPU_DESCRIPTOR_HANDLE			m_current_cpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
+	D3D12_GPU_DESCRIPTOR_HANDLE			m_current_gpu_handle[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]{ 0 };
 	
 	std::vector<ComPtr<ID3D12PipelineState>> m_pipeline_states;
 	std::vector<ComPtr<ID3D12RootSignature>> m_root_signatures;

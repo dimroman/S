@@ -195,52 +195,59 @@ enum {
 	virtual_key_oem_clear = 0xFE,
 };
 
-void input::move_camera_along_axis_x(math::uint2 const cursor_position, float const last_frame_time, float const direction)
+void input::move_camera_along_axis_x(float const direction)
 {
-	//m_camera->move_x(last_frame_time*direction);
+	//m_camera->move_x(m_last_frame_time*direction);
 }
 
-void input::move_camera_along_axis_z(math::uint2 const cursor_position, float const last_frame_time, float const direction)
+void input::move_camera_along_axis_z(float const direction)
 {
-	m_camera->move_z(last_frame_time*direction);
+	m_camera->move_z(m_last_frame_time*direction);
 }
 
-void input::on_left_mouse_button_down(math::uint2 const cursor_position, float const last_frame_time)
+void input::on_left_mouse_button_down()
 {
-	m_last_mouse_left_button_down_position = cursor_position;
+	m_last_mouse_left_button_down_position = m_current_cursor_position;
 }
 
-void input::left_mouse_button_is_down(math::uint2 const cursor_position, float const last_frame_time)
+void input::left_mouse_button_is_down()
 {
-	if (cursor_position.x != m_last_mouse_position.x)
+	if (m_current_cursor_position.x != m_previous_cursor_position.x)
 	{
-		float const dx = math::to_radians(0.01f*static_cast<float>(cursor_position.x - m_last_mouse_position.x));
+		float const dx = math::to_radians(0.01f*static_cast<float>(m_current_cursor_position.x - m_previous_cursor_position.x));
 		//m_camera->rotate_around_up(-dx);
 	}
-	if (cursor_position.y != m_last_mouse_position.y)
+	if (m_current_cursor_position.y != m_previous_cursor_position.y)
 	{
-		float const dy = math::to_radians(0.01f*static_cast<float>(cursor_position.y - m_last_mouse_position.y));
+		float const dy = math::to_radians(0.01f*static_cast<float>(m_current_cursor_position.y - m_previous_cursor_position.y));
 		//m_camera->rotate_around_x(dy);
 	}
 
 	if (m_last_mouse_left_button_down_position.x != unsigned(-1) && m_last_mouse_left_button_down_position.y != unsigned(-1))
 	{
-		math::rectangle<math::uint2> const selection(cursor_position, m_last_mouse_left_button_down_position);
+		math::rectangle<math::uint2> const selection(
+			m_area_selection_enabled ? m_current_cursor_position : m_last_mouse_left_button_down_position, 
+			m_last_mouse_left_button_down_position
+		);
 		m_graphics->highlight_object(selection, m_options->screen_width());
 	}
 }
 
-void input::on_left_mouse_button_up(math::uint2 const cursor_position, float const last_frame_time)
+void input::on_left_mouse_button_up()
 {
-	math::rectangle<math::uint2> const selection(cursor_position, m_last_mouse_left_button_down_position);
+	math::rectangle<math::uint2> const selection(
+		m_area_selection_enabled ? m_current_cursor_position : m_last_mouse_left_button_down_position, 
+		m_last_mouse_left_button_down_position
+	);
 	m_graphics->select_object(selection, m_options->screen_width());
 	m_graphics->remove_all_highlighting();
 }
 
-input::input(camera* const camera, options* const options, graphics* const graphics) :
+input::input(camera* const camera, options* const options, graphics* const graphics, bool const area_selection_enabled) :
 	m_camera(camera),
 	m_options(options),
-	m_graphics(graphics)
+	m_graphics(graphics),
+	m_area_selection_enabled(area_selection_enabled)
 {
 	m_game_key_bindings[game_key::left_mouse_button] = virtual_key_left_mouse_button;
 	m_game_key_bindings[game_key::w_keyboard_button] = virtual_key_w;
@@ -250,28 +257,30 @@ input::input(camera* const camera, options* const options, graphics* const graph
 	m_game_key_bindings[game_key::resize_keyboard_button] = virtual_key_r;
 	m_game_key_bindings[game_key::quit_keyboard_button] = virtual_key_escape;
 	
-	m_game_key_is_down_callbacks[game_key::left_mouse_button] = std::bind(&input::left_mouse_button_is_down, this, std::placeholders::_1, std::placeholders::_2);
-	m_game_key_is_down_callbacks[game_key::w_keyboard_button] = std::bind(&input::move_camera_along_axis_z, this, std::placeholders::_1, std::placeholders::_2, -1.0f);
-	m_game_key_is_down_callbacks[game_key::a_keyboard_button] = std::bind(&input::move_camera_along_axis_x, this, std::placeholders::_1, std::placeholders::_2, -1.0f);
-	m_game_key_is_down_callbacks[game_key::s_keyboard_button] = std::bind(&input::move_camera_along_axis_z, this, std::placeholders::_1, std::placeholders::_2, 1.0f);
-	m_game_key_is_down_callbacks[game_key::d_keyboard_button] = std::bind(&input::move_camera_along_axis_x, this, std::placeholders::_1, std::placeholders::_2, 1.0f);
+	m_game_key_is_down_callbacks[game_key::left_mouse_button] = std::bind(&input::left_mouse_button_is_down, this);
+	m_game_key_is_down_callbacks[game_key::w_keyboard_button] = std::bind(&input::move_camera_along_axis_z, this, -1.0f);
+	m_game_key_is_down_callbacks[game_key::a_keyboard_button] = std::bind(&input::move_camera_along_axis_x, this, -1.0f);
+	m_game_key_is_down_callbacks[game_key::s_keyboard_button] = std::bind(&input::move_camera_along_axis_z, this, 1.0f);
+	m_game_key_is_down_callbacks[game_key::d_keyboard_button] = std::bind(&input::move_camera_along_axis_x, this, 1.0f);
 
-	m_game_key_down_callbacks[game_key::left_mouse_button] = std::bind(&input::on_left_mouse_button_down, this, std::placeholders::_1, std::placeholders::_2);
-	m_game_key_down_callbacks[game_key::resize_keyboard_button] = std::bind(&input::resize, this, std::placeholders::_1, std::placeholders::_2);
-	m_game_key_down_callbacks[game_key::quit_keyboard_button] = std::bind(&input::quit, this, std::placeholders::_1, std::placeholders::_2);
+	m_game_key_down_callbacks[game_key::left_mouse_button] = std::bind(&input::on_left_mouse_button_down, this);
+	m_game_key_down_callbacks[game_key::resize_keyboard_button] = std::bind(&input::resize, this);
+	m_game_key_down_callbacks[game_key::quit_keyboard_button] = std::bind(&input::quit, this);
 
-	m_game_key_up_callbacks[game_key::left_mouse_button] = std::bind(&input::on_left_mouse_button_up, this, std::placeholders::_1, std::placeholders::_2);
+	m_game_key_up_callbacks[game_key::left_mouse_button] = std::bind(&input::on_left_mouse_button_up, this);
 }
 
 void input::update(float const last_frame_time, bool& need_to_quit)
 {
+	m_last_frame_time = last_frame_time;
+	m_previous_cursor_position = m_current_cursor_position;
 	POINT point;
 	BOOL const result = GetCursorPos(&point);
 	assert(result);
 	assert(point.x >= 0);
 	assert(point.y >= 0);
 
-	math::uint2 cursor_position{ 
+	m_current_cursor_position = { 
 		m_options->clamp_screen_position_x(point.x), 
 		m_options->clamp_screen_position_y(point.y) 
 	};
@@ -282,32 +291,31 @@ void input::update(float const last_frame_time, bool& need_to_quit)
 		if ((state >> 8) & 0xff)
 		{
 			if (m_game_key_is_down_callbacks[i])
-				m_game_key_is_down_callbacks[i](cursor_position, last_frame_time);
+				m_game_key_is_down_callbacks[i]();
 			if (m_game_key_states[i] == 0)
 			{
 				if (m_game_key_down_callbacks[i])
-					m_game_key_down_callbacks[i](cursor_position, last_frame_time);
+					m_game_key_down_callbacks[i]();
 				m_game_key_states[i] = 1;
 			}
 		}
 		else if ( m_game_key_states[i] == 1 )
 		{
 			if (m_game_key_up_callbacks[i])
-				m_game_key_up_callbacks[i](cursor_position, last_frame_time);
+				m_game_key_up_callbacks[i]();
 			m_game_key_states[i] = 0;
 		}
 	}
 
-	m_last_mouse_position = cursor_position;
 	need_to_quit = m_need_to_quit;
 }
 
-void input::resize(math::uint2 const cursor_position, float const last_frame_time)
+void input::resize()
 {
 	m_options->resize();
 }
 
-void input::quit(math::uint2 const cursor_position, float const last_frame_time)
+void input::quit()
 {
 	m_need_to_quit = true;
 }

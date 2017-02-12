@@ -6,10 +6,11 @@ StepTimer g_timer;
 
 application::application() :
 	m_options(&m_graphics),
-	m_graphics(m_options.screen_width(), m_options.screen_height()),
+	m_graphics(&m_storage, m_options.screen_width(), m_options.screen_height()),
 	m_camera({ 0.0f, 0.0f, 0.0f }),
-	m_logic(m_graphics),
-	m_input(&m_camera, &m_options, &m_graphics)
+	m_input(&m_camera, &m_options, &m_graphics, false),
+	m_storage(),
+	m_logic(&m_storage, m_graphics)
 {
 
 }
@@ -30,13 +31,12 @@ void application::run()
 		float const last_frame_time = static_cast<float>(g_timer.GetElapsedSeconds());
 
 		m_input.update(last_frame_time, quit);
-		m_graphics.run(
+		m_graphics.update(
 			last_frame_time, 
 			m_camera.look_at_right_handed(), 
-			m_camera.perspective_projection_right_handed(m_options.field_of_view, m_options.aspect_ratio(), m_options.far_plane, m_options.near_plane), 
-			m_options.screen_width(), 
-			m_options.screen_height()
+			m_camera.perspective_projection_right_handed(m_options.field_of_view, m_options.aspect_ratio(), m_options.far_plane, m_options.near_plane)
 		);
+		m_graphics.run(	m_options.screen_width(), m_options.screen_height() );
 			
 		frames_count++;
 

@@ -3,18 +3,18 @@
 
 #include "square_field.h"
 #include "hexagon_field.h"
-#include <vector>
 
 namespace math {
 	struct float4;
 }
 
 class graphics;
+class storage;
 
 class logic
 {
 public:
-	logic(graphics& graphics);
+	logic(storage* const storage, graphics& graphics);
 
 private:
 	//hexagon_field m_field;

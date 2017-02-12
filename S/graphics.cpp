@@ -2,13 +2,14 @@
 #include "helper_functions.h"
 #include "d3dx12.h"
 #include <process.h>
+#include "storage.h"
 
 void graphics::update_model_transforms(unsigned const current_frame_index)
 {
 	m_per_frame_model_transforms[current_frame_index].update(
 		0,
-		m_model_transforms,
-		sizeof(m_model_transforms)
+		m_storage->model_transforms(),
+		m_storage->model_transforms_size()
 	);
 }
 
@@ -16,8 +17,8 @@ void graphics::update_colors(unsigned const current_frame_index)
 {
 	m_per_frame_colors[current_frame_index].update(
 		0,
-		m_colors,
-		sizeof(m_colors)
+		m_storage->colors(),
+		m_storage->colors_size()
 	);
 }
 
@@ -32,6 +33,8 @@ void graphics::update_view_projection_transform(math::float4x4 const& view_proje
 
 void graphics::update(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed)
 {
+	m_frame_id++;
+
 	math::float4x4 view_projection;
 	math::multiply(perspective_projection_right_handed, look_at_right_handed, view_projection);
 	update_view_projection_transform(view_projection, m_current_frame_index);
@@ -40,11 +43,8 @@ void graphics::update(float const last_frame_time, math::float4x4 const& look_at
 	update_colors(m_current_frame_index);
 }
 
-void graphics::run(float const last_frame_time, math::float4x4 const& look_at_right_handed, math::float4x4 const& perspective_projection_right_handed, unsigned const screen_width, unsigned const screen_height)
+void graphics::run(unsigned const screen_width, unsigned const screen_height)
 {
-	m_frame_id++;
-
-	update(last_frame_time, look_at_right_handed, perspective_projection_right_handed);
 	auto& command_list = m_command_lists[m_current_frame_index];
 
 	m_direct_command_list_allocators[m_current_frame_index]->Reset();
@@ -122,10 +122,22 @@ void graphics::run(float const last_frame_time, math::float4x4 const& look_at_ri
 	m_fence_values[m_current_frame_index] = max_fence_value + 1;
 }
 
-void graphics::update_object_selection_impl(math::rectangle<math::uint2> const selection, unsigned const screen_width, bool* const current_selection_states)
+void graphics::select_object(math::rectangle<math::uint2> const selection, unsigned const screen_width)
+{ 
+	bool states[render_object_instances_count]{ false };
+	update_object_selection_impl(selection, screen_width, states); 
+	m_storage->update_selection_states(states);
+
+}
+void graphics::highlight_object(math::rectangle<math::uint2> const selection, unsigned const screen_width) 
 {
 	bool states[render_object_instances_count]{ false };
+	update_object_selection_impl(selection, screen_width, states); 
+	m_storage->update_highlight_states(states);
+}
 
+void graphics::update_object_selection_impl(math::rectangle<math::uint2> const selection, unsigned const screen_width, bool* const current_selection_states)
+{
 	void* data;
 	D3D12_RANGE const read_range{ 0, 0 };
 	ThrowIfFailed(m_indices_rtv_readback_resource[m_current_frame_index]->Map(0, &read_range, &data));
@@ -139,41 +151,20 @@ void graphics::update_object_selection_impl(math::rectangle<math::uint2> const s
 		for (unsigned i = start_index, n = end_index; i <= n; i += step)
 		{
 			auto const id = ids[i];
-			states[id] = true;
+			current_selection_states[id] = true;
 		}
 	}
 	m_indices_rtv_readback_resource[m_current_frame_index]->Unmap(0, nullptr);
-
-	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
-	{
-		if (states[i] != current_selection_states[i])
-		{
-			current_selection_states[i] = states[i];
-			m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
-		}
-	}
 }
 
 void graphics::remove_all_highlighting()
 {
-	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
-	{
-		if (m_highlighted_object_instances[i])
-		{
-			m_highlighted_object_instances[i] = false;
-			m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
-		}
-	}
+	bool states[render_object_instances_count]{ false };
+	m_storage->update_highlight_states(states);
 }
 
 void graphics::remove_all_selection()
 {
-	for (unsigned i = 0; i < m_render_object_instances_count; ++i)
-	{
-		if (m_selected_object_instances[i])
-		{
-			m_selected_object_instances[i] = false;
-			m_selection_updated_callbacks[i](m_selected_object_instances[i], m_highlighted_object_instances[i], m_colors[i]);
-		}
-	}
+	bool states[render_object_instances_count]{ false };
+	m_storage->update_selection_states(states);
 }

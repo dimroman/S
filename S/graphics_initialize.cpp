@@ -1,6 +1,7 @@
 #include "graphics.h"
 #include "helper_functions.h"
 #include "d3dx12.h"
+#include "storage.h"
 
 void graphics::create_descriptor_heap(ID3D12Device* const device, D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
 {
@@ -328,7 +329,8 @@ void graphics::resize(unsigned const screen_width, unsigned const screen_height)
 	m_scissor_rectangle = { 0, 0, static_cast<LONG>(screen_width), static_cast<LONG>(screen_height) };
 }
 
-graphics::graphics(unsigned const screen_width, unsigned const screen_height)
+graphics::graphics(storage* const storage, unsigned const screen_width, unsigned const screen_height) :
+	m_storage(storage)
 {				
 	WNDCLASS wc{ 0, DefWindowProc, 0, 0, 0, 0, LoadCursor(0, IDC_ARROW), 0, 0, L"MainWnd" };
 	
@@ -521,10 +523,7 @@ void graphics::new_render_object(
 	unsigned const instance_vertex_buffer_view_id,
 	unsigned const index_buffer_view_id,
 	D3D_PRIMITIVE_TOPOLOGY const primitive_topology,
-	math::float4x4 const* const model_transforms,
-	math::float4 const* const colors,
-	unsigned const instances_count,
-	selection_updated_callback_type selection_updated_callback
+	unsigned const instances_count
 )
 {
 	m_render_objects.push_back( render_object(
@@ -540,14 +539,4 @@ void graphics::new_render_object(
 	));
 
 	assert(instance_vertex_buffer_view_id==unsigned(-1) || instances_count == m_vertex_buffer_views[instance_vertex_buffer_view_id].SizeInBytes / m_vertex_buffer_views[instance_vertex_buffer_view_id].StrideInBytes);
-
-	for (unsigned i = 0; i < instances_count; ++i)
-	{
-		m_model_transforms[m_render_object_instances_count] = model_transforms[i];
-		m_colors[m_render_object_instances_count] = colors[i];
-		m_selection_updated_callbacks[m_render_object_instances_count] = selection_updated_callback;
-
-		m_render_object_instances_count++;
-		assert(m_render_object_instances_count < render_object_instances_count);
-	}
 }

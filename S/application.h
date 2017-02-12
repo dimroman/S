@@ -6,6 +6,7 @@
 #include "logic.h"
 #include "camera.h"
 #include "input.h"
+#include "storage.h"
 #include "math.h"
 
 #pragma comment(lib,"d3dcompiler.lib")
@@ -18,6 +19,7 @@ public:
 	application();
 	void run();
 private:
+	storage				m_storage;
 	options				m_options;
 	graphics			m_graphics;
 	camera				m_camera;

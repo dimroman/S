@@ -6,10 +6,12 @@ namespace math {
 }
 
 class graphics;
+class storage;
+
 class square_field
 {
 public:
-	square_field( graphics* const graphics);
+	square_field(storage* const storage, graphics* const graphics);
 
 private:
 	enum {

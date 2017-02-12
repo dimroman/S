@@ -1,7 +1,8 @@
 #include "hexagon_field.h"
 #include "graphics.h"
+#include "storage.h"
 
-hexagon_field::hexagon_field(graphics* const graphics)
+hexagon_field::hexagon_field(storage* const storage, graphics* const graphics)
 {
 	math::float4x4 model_transforms[field_width*field_height];
 	math::float4 hexagon_colors[field_width*field_height];
@@ -43,10 +44,15 @@ hexagon_field::hexagon_field(graphics* const graphics)
 		unsigned(-1),
 		graphics->index_buffer_view_id(assets::hexagon_indices),
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		&model_transforms[0],
-		&hexagon_colors[0],
-		field_width*field_height,
-		default_selection_updated_callback
+		field_width*field_height
+	);
+
+	storage->new_object(
+		model_transforms,
+		hexagon_colors,
+		false,
+		true,
+		field_width*field_height
 	);
 
 	unsigned const hexagon_frame_pipeline_state_id = graphics->pipeline_state_id(
@@ -64,9 +70,14 @@ hexagon_field::hexagon_field(graphics* const graphics)
 		unsigned(-1),
 		graphics->index_buffer_view_id(assets::hexagon_frame_indices),
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
-		&model_transforms[0],
-		&hexagon_frame_colors[0],
-		field_width*field_height,
-		empty_selection_updated_callback
+		field_width*field_height
+	);
+	
+	storage->new_object(
+		model_transforms,
+		hexagon_frame_colors,
+		false,
+		false,
+		field_width*field_height
 	);
 }

@@ -6,11 +6,12 @@ namespace math {
 }
 
 class graphics;
+class storage;
 
 class hexagon_field
 {
 public:
-	hexagon_field(graphics* const graphics);
+	hexagon_field(storage* const storage, graphics* const graphics);
 private:
 	enum {
 		field_width = 16,

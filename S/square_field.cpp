@@ -1,7 +1,8 @@
 #include "square_field.h"
 #include "graphics.h"
+#include "storage.h"
 
-square_field::square_field( graphics* const graphics)
+square_field::square_field(storage* const storage, graphics* const graphics)
 {	
 	unsigned const rectangle_root_signature_id = graphics->root_signature_id();
 	unsigned const rectangle_vertex_buffer_view_id = graphics->vertex_buffer_view_id(assets::rectangle_vertices);
@@ -43,10 +44,40 @@ square_field::square_field( graphics* const graphics)
 		unsigned(-1),
 		rectangle_index_buffer_view_id,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+		field_width*field_height
+	);
+
+	storage->new_object(
 		model_transforms,
 		colors,
-		field_width*field_height,
-		default_selection_updated_callback
+		false,
+		true,
+		field_width*field_height
+	);
+
+	math::float4x4 model_transform = math::float4x4::identity();
+	model_transform.m[0][0] = m_cell_side_length/2;
+	model_transform.m[1][1] = m_cell_side_length/2;
+	model_transform.m[2][3] = -0.0005f;
+
+	math::float4 color = math::float4(0.0f, 0.5f, 0.0f, 1.0f);
+
+	graphics->new_render_object(
+		grid_pipeline_state_id,
+		rectangle_root_signature_id,
+		rectangle_vertex_buffer_view_id,
+		unsigned(-1),
+		rectangle_index_buffer_view_id,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+		1
+	);
+
+	storage->new_object(
+		&model_transform,
+		&color,
+		true,
+		false,
+		1
 	);
 
 	unsigned const vertices_count = 2 * (field_width + 1 + field_height + 1);
@@ -65,7 +96,7 @@ square_field::square_field( graphics* const graphics)
 	}
 	assert(index == vertices_count);
 
-	math::float4 const color = math::float4(0.1f, 0.2f, 0.3f, 1.0f);
+	color = math::float4(0.1f, 0.2f, 0.3f, 1.0f);
 
 	unsigned const square_grid_pipeline_state_id = graphics->pipeline_state_id(
 		rectangle_root_signature_id, 
@@ -75,7 +106,7 @@ square_field::square_field( graphics* const graphics)
 		L"Shaders//color_id.hlsl"
 	);
 
-	math::float4x4 model_transform = math::float4x4::identity();
+	model_transform = math::float4x4::identity();
 	model_transform.m[0][0] = m_cell_side_length;
 	model_transform.m[1][1] = m_cell_side_length;
 	model_transform.m[2][3] = -0.001f;
@@ -87,9 +118,14 @@ square_field::square_field( graphics* const graphics)
 		unsigned(-1),
 		unsigned(-1),
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
+		1
+	);
+	
+	storage->new_object(
 		&model_transform,
 		&color,
-		1,
-		empty_selection_updated_callback
+		false,
+		false,
+		1
 	);
 }
